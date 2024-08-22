@@ -1,0 +1,31 @@
+[32m2024-08-22 12:55:16 +0300[0m - dagster - [34mDEBUG[0m - junk_removal_job - 3f1b1662-d3ce-46b8-8e56-07663f251082 - 1185342 - LOGS_CAPTURED - Started capturing logs in process (pid: 1185342).
+[32m2024-08-22 12:55:16 +0300[0m - dagster - [34mDEBUG[0m - junk_removal_job - 3f1b1662-d3ce-46b8-8e56-07663f251082 - 1185342 - run_remove_junk_ligands - STEP_START - Started execution of step "run_remove_junk_ligands".
+[32m2024-08-22 12:55:16 +0300[0m - dagster - [34mWARNING[0m - junk_removal_job - 3f1b1662-d3ce-46b8-8e56-07663f251082 - run_remove_junk_ligands - No previously stored outputs found for source StepOutputHandle(step_key='run_remove_water', output_name='result', mapping_key=None). This is either because you are using an IO Manager that does not depend on run ID, or because all the previous runs have skipped the output in conditional execution.
+[32m2024-08-22 12:55:16 +0300[0m - dagster - [34mERROR[0m - [31mjunk_removal_job - 3f1b1662-d3ce-46b8-8e56-07663f251082 - 1185342 - run_remove_junk_ligands - STEP_FAILURE - Execution of step "run_remove_junk_ligands" failed.
+
+dagster._core.errors.DagsterInvariantViolationError: Attempting to access run_id, but it was not provided when constructing the OutputContext
+
+Stack Trace:
+  File "/home/nikolenko/miniforge3/envs/lpce/lib/python3.10/site-packages/dagster/_core/execution/plan/execute_plan.py", line 247, in dagster_event_sequence_for_step
+    for step_event in check.generator(step_events):
+  File "/home/nikolenko/miniforge3/envs/lpce/lib/python3.10/site-packages/dagster/_core/execution/plan/execute_step.py", line 466, in core_dagster_event_sequence_for_step
+    for event_or_input_value in step_input.source.load_input_object(
+  File "/home/nikolenko/miniforge3/envs/lpce/lib/python3.10/site-packages/dagster/_core/execution/plan/inputs.py", line 361, in load_input_object
+    yield from _load_input_with_input_manager(input_manager, load_input_context)
+  File "/home/nikolenko/miniforge3/envs/lpce/lib/python3.10/site-packages/dagster/_core/execution/plan/inputs.py", line 618, in _load_input_with_input_manager
+    value = input_manager.load_input(context)
+  File "/home/nikolenko/miniforge3/envs/lpce/lib/python3.10/site-packages/dagster/_core/storage/upath_io_manager.py", line 404, in load_input
+    path = self._get_path(context)
+  File "/home/nikolenko/miniforge3/envs/lpce/lib/python3.10/site-packages/dagster/_core/storage/upath_io_manager.py", line 198, in _get_path
+    path = self._get_path_without_extension(context)
+  File "/home/nikolenko/miniforge3/envs/lpce/lib/python3.10/site-packages/dagster/_core/storage/upath_io_manager.py", line 164, in _get_path_without_extension
+    context_path = self.get_op_output_relative_path(context)
+  File "/home/nikolenko/miniforge3/envs/lpce/lib/python3.10/site-packages/dagster/_core/storage/upath_io_manager.py", line 177, in get_op_output_relative_path
+    return UPath(*context.get_identifier())
+  File "/home/nikolenko/miniforge3/envs/lpce/lib/python3.10/site-packages/dagster/_core/execution/context/input.py", line 441, in get_identifier
+    return self.upstream_output.get_identifier()
+  File "/home/nikolenko/miniforge3/envs/lpce/lib/python3.10/site-packages/dagster/_core/execution/context/output.py", line 589, in get_identifier
+    run_id = self.run_id
+  File "/home/nikolenko/miniforge3/envs/lpce/lib/python3.10/site-packages/dagster/_core/execution/context/output.py", line 217, in run_id
+    raise DagsterInvariantViolationError(
+[0m

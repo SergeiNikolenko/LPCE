@@ -1,0 +1,40 @@
+[32m2024-08-22 12:48:48 +0300[0m - dagster - [34mDEBUG[0m - junk_removal_job - 337c9de2-3f87-4d6a-94ea-c243784f9859 - 1176406 - LOGS_CAPTURED - Started capturing logs in process (pid: 1176406).
+[32m2024-08-22 12:48:48 +0300[0m - dagster - [34mDEBUG[0m - junk_removal_job - 337c9de2-3f87-4d6a-94ea-c243784f9859 - 1176406 - run_remove_water - STEP_START - Started execution of step "run_remove_water".
+[32m2024-08-22 12:48:48 +0300[0m - dagster - [34mDEBUG[0m - junk_removal_job - 337c9de2-3f87-4d6a-94ea-c243784f9859 - 1176406 - run_remove_water - STEP_INPUT - Got input "input_dir" of type "String". (Type check passed).
+[32m2024-08-22 12:48:49 +0300[0m - dagster - [34mINFO[0m - junk_removal_job - 337c9de2-3f87-4d6a-94ea-c243784f9859 - run_remove_water - Found 218077 PDB files in /mnt/ligandpro/db/PDB/pdb2/processed
+Removing water:   0%|          | 0/218077 [00:00<?, ?file/s]Removing water:   0%|          | 224/218077 [00:01<21:38, 167.75file/s]Removing water:   0%|          | 896/218077 [00:01<05:18, 681.03file/s]Removing water:   1%|          | 1344/218077 [00:02<06:48, 530.58file/s]Removing water:   1%|          | 1792/218077 [00:05<13:12, 272.91file/s]Removing water:   1%|          | 2016/218077 [00:08<20:33, 175.10file/s]Removing water:   1%|          | 2240/218077 [00:10<21:20, 168.62file/s]Removing water:   1%|          | 2464/218077 [00:13<27:48, 129.25file/s]Removing water:   1%|          | 2688/218077 [00:13<22:45, 157.77file/s]Removing water:   1%|▏         | 2912/218077 [00:14<20:26, 175.41file/s]Removing water:   1%|▏         | 3136/218077 [00:15<19:44, 181.49file/s]Removing water:   2%|▏         | 3360/218077 [00:19<30:24, 117.67file/s]Removing water:   2%|▏         | 3584/218077 [00:19<23:47, 150.27file/s]Removing water:   2%|▏         | 3808/218077 [00:20<21:08, 168.96file/s]Removing water:   2%|▏         | 4032/218077 [00:23<30:31, 116.86file/s]Removing water:   2%|▏         | 4256/218077 [00:24<22:43, 156.84file/s]Removing water:   2%|▏         | 4480/218077 [00:24<19:48, 179.74file/s]Removing water:   2%|▏         | 4704/218077 [00:26<20:50, 170.65file/s]Removing water:   2%|▏         | 4704/218077 [00:40<20:50, 170.65file/s][32m2024-08-22 12:49:30 +0300[0m - dagster - [34mERROR[0m - [31mjunk_removal_job - 337c9de2-3f87-4d6a-94ea-c243784f9859 - 1176406 - run_remove_water - STEP_FAILURE - Execution of step "run_remove_water" failed.
+
+dagster._core.errors.DagsterExecutionInterruptedError
+
+Stack Trace:
+  File "/home/nikolenko/miniforge3/envs/lpce/lib/python3.10/site-packages/dagster/_core/execution/plan/execute_plan.py", line 247, in dagster_event_sequence_for_step
+    for step_event in check.generator(step_events):
+  File "/home/nikolenko/miniforge3/envs/lpce/lib/python3.10/site-packages/dagster/_core/execution/plan/execute_step.py", line 500, in core_dagster_event_sequence_for_step
+    for user_event in _step_output_error_checked_user_event_sequence(
+  File "/home/nikolenko/miniforge3/envs/lpce/lib/python3.10/site-packages/dagster/_core/execution/plan/execute_step.py", line 184, in _step_output_error_checked_user_event_sequence
+    for user_event in user_event_sequence:
+  File "/home/nikolenko/miniforge3/envs/lpce/lib/python3.10/site-packages/dagster/_core/execution/plan/execute_step.py", line 88, in _process_asset_results_to_events
+    for user_event in user_event_sequence:
+  File "/home/nikolenko/miniforge3/envs/lpce/lib/python3.10/site-packages/dagster/_core/execution/plan/compute.py", line 198, in execute_core_compute
+    for step_output in _yield_compute_results(step_context, inputs, compute_fn, compute_context):
+  File "/home/nikolenko/miniforge3/envs/lpce/lib/python3.10/site-packages/dagster/_core/execution/plan/compute.py", line 167, in _yield_compute_results
+    for event in iterate_with_context(
+  File "/home/nikolenko/miniforge3/envs/lpce/lib/python3.10/site-packages/dagster/_utils/__init__.py", line 474, in iterate_with_context
+    next_output = next(iterator)
+  File "/home/nikolenko/miniforge3/envs/lpce/lib/python3.10/site-packages/dagster/_core/execution/plan/compute_generator.py", line 141, in _coerce_op_compute_fn_to_iterator
+    result = invoke_compute_fn(
+  File "/home/nikolenko/miniforge3/envs/lpce/lib/python3.10/site-packages/dagster/_core/execution/plan/compute_generator.py", line 129, in invoke_compute_fn
+    return fn(context, **args_to_pass) if context_arg_provided else fn(**args_to_pass)
+  File "/home/nikolenko/work/Project/LPCE/dagster_pipeline/pipelines/ops/water_removal_ops.py", line 47, in run_remove_water
+    remove_water_from_directory(input_directory)
+  File "/home/nikolenko/work/Project/LPCE/dagster_pipeline/pipelines/ops/water_removal_ops.py", line 36, in remove_water_from_directory
+    results = Parallel(n_jobs=n_jobs)(
+  File "/home/nikolenko/.local/lib/python3.10/site-packages/joblib/parallel.py", line 2007, in __call__
+    return output if self.return_generator else list(output)
+  File "/home/nikolenko/.local/lib/python3.10/site-packages/joblib/parallel.py", line 1650, in _get_outputs
+    yield from self._retrieve()
+  File "/home/nikolenko/.local/lib/python3.10/site-packages/joblib/parallel.py", line 1762, in _retrieve
+    time.sleep(0.01)
+  File "/home/nikolenko/miniforge3/envs/lpce/lib/python3.10/site-packages/dagster/_utils/interrupts.py", line 82, in _new_signal_handler
+    raise error_cls()
+[0m
