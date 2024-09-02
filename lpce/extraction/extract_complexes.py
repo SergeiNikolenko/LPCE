@@ -4,11 +4,30 @@ from tqdm import tqdm
 import sys
 from config.settings import RAW_DIR
 
-def count_structures(directory):
+def count_structures(directory: Path) -> int:
+    """
+    Counts the number of `.ent.gz` files in the specified directory.
+
+    Args:
+        directory (Path): The directory to search for `.ent.gz` files.
+
+    Returns:
+        int: The number of `.ent.gz` files found.
+    """
     directory_path = Path(directory)
     return sum(1 for _ in directory_path.rglob("*.ent.gz"))
 
-def extract_complexes():
+def extract_complexes() -> int:
+    """
+    Synchronizes PDB structures from the RCSB PDB FTP server to the local directory specified by RAW_DIR.
+
+    This function performs a dry-run to estimate the total number of files to be synced, then proceeds with the actual
+    synchronization using `rsync`. The function prints progress and statistics, including the number of new structures
+    added.
+
+    Returns:
+        int: The number of new structures added during the sync process. Returns 0 if an error occurred.
+    """
     output_path = Path(RAW_DIR)
     output_path.mkdir(parents=True, exist_ok=True)
 

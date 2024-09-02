@@ -1,36 +1,28 @@
 from pathlib import Path
 from joblib import Parallel, delayed
 from tqdm import tqdm
+import subprocess
 from config.settings import PROCESSED_DIR
 
-def remove_water_from_file(input_file_path):
-    try:
-        with open(input_file_path, 'r') as f_in:
-            filtered_lines = [line for line in f_in if not (line.startswith("HETATM") and "HOH" in line)]
+def remove_water_from_directory() -> None:
+    """
+    Processes all PDB files in the specified directory, removing water molecules from each file.
 
-        with open(input_file_path, 'w') as f_out:
-            f_out.writelines(filtered_lines)
+    This function utilizes a compiled C program (`remove_water`) to perform the water removal.
+    The results are printed to the console, summarizing the number of files processed.
 
-        print(f"Processed and overwrote {input_file_path}")
-        return True
-    except Exception as e:
-        print(f"Failed to process {input_file_path}: {e}")
-        return f"Error processing {input_file_path}: {e}"
-
-def remove_water_from_directory():
+    Returns:
+        None
+    """
     input_directory = Path(PROCESSED_DIR)
     pdb_files = list(input_directory.rglob("*.pdb"))
 
     total_files = len(pdb_files)
     print(f"Found {total_files} PDB files in {input_directory}")
 
-    results = Parallel(n_jobs=-1)(
-        delayed(remove_water_from_file)(pdb_file) for pdb_file in tqdm(pdb_files, desc="Removing water", unit="file", total=total_files)
-    )
+    executable_path = "cleanup/remove_water"
 
-    successful_files = sum(1 for result in results if result is True)
-    failed_files = sum(1 for result in results if result is not True)
+    for pdb_file in tqdm(pdb_files, desc="Removing water", unit="file", total=total_files):
+        subprocess.run([executable_path, str(pdb_file)], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     print(f"Total structures processed: {total_files}")
-    print(f"Successfully processed: {successful_files}")
-    print(f"Failed to process: {failed_files}")

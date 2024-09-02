@@ -6,7 +6,18 @@ from tqdm import tqdm
 from joblib import Parallel, delayed
 from config.settings import RAW_DIR, PROCESSED_DIR
 
-def decompress_file(input_file_path, output_file_path):
+def decompress_file(input_file_path: Path, output_file_path: Path) -> str:
+    """
+    Decompresses a gzip-compressed PDB file and writes it to the specified output path.
+
+    Args:
+        input_file_path (Path): The path to the gzip-compressed PDB file.
+        output_file_path (Path): The path where the decompressed PDB file will be saved.
+
+    Returns:
+        str: A message indicating the outcome of the decompression ("File already exists", 
+        "True" for success, or an error message).
+    """
     if os.path.exists(output_file_path):
         return "File already exists"
 
@@ -20,10 +31,29 @@ def decompress_file(input_file_path, output_file_path):
     except Exception as e:
         return f"Unexpected error decompressing {input_file_path}: {e}"
 
-def get_file_size_in_gb(file_path):
+def get_file_size_in_gb(file_path: Path) -> float:
+    """
+    Calculates the size of a file in gigabytes.
+
+    Args:
+        file_path (Path): The path to the file.
+
+    Returns:
+        float: The size of the file in gigabytes.
+    """
     return os.path.getsize(file_path) / (1024 ** 3)
 
-def decompress_pdb_files():
+def decompress_pdb_files() -> None:
+    """
+    Decompresses all gzip-compressed PDB files in the RAW_DIR directory and saves them 
+    in the PROCESSED_DIR directory. 
+
+    This function also prints out statistics about the number of files processed, the 
+    number of successful decompressions, and the total size of compressed and decompressed files.
+
+    Returns:
+        None
+    """
     os.makedirs(PROCESSED_DIR, exist_ok=True)
 
     input_output_paths = []
@@ -37,7 +67,8 @@ def decompress_pdb_files():
     total_files = len(input_output_paths)
 
     results = Parallel(n_jobs=-1)(
-        delayed(decompress_file)(input_path, output_path) for input_path, output_path in tqdm(input_output_paths, desc="Decompressing files", unit="file", total=total_files)
+        delayed(decompress_file)(input_path, output_path) 
+        for input_path, output_path in tqdm(input_output_paths, desc="Decompressing files", unit="file", total=total_files)
     )
 
     successful_files = sum(1 for result in results if result is True)
