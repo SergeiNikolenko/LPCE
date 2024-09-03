@@ -12,7 +12,13 @@ dependencies:
   - rsync
   - pathlib
   - pip
+  - datamol
+  - pyarrow
+  - ipykernel
+  - fastparquet
+
   - pip:
     - python-dotenv
     - tqdm
     - pytest
+    - chembl_structure_pipeline

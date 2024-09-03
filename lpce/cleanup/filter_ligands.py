@@ -1,9 +1,11 @@
 import json
 from pathlib import Path
 
+
 def filter_ligands():
     """
-    Filters ligands based on their presence in site information and saves updated complexes.
+    Filters ligands based on their presence in site
+    information and saves updated complexes.
     """
     with open(Path("data/grouped_complexes.json"), "r") as f:
         grouped_complexes = json.load(f)
@@ -15,8 +17,6 @@ def filter_ligands():
     total_ligands_grouped = sum(len(ligands) for chains in grouped_complexes.values() for ligands in chains.values())
 
     total_proteins_site_info = len(site_info)
-    total_ligands_site_info = sum(len(chains) for chains in site_info.values())
-
     ligand_intersections = 0
     ligand_deletions = 0
     remaining_ligands = 0
@@ -25,9 +25,7 @@ def filter_ligands():
         if protein not in site_info:
             remaining_ligands += sum(len(ligands) for ligands in chains.values())
             continue  # Skip protein if it's not in site_info.json
-        
         for chain, ligands in chains.items():
-            initial_ligand_count = len(ligands)
             ligands_to_keep = []
             for ligand_info in ligands:
                 ligand_name = ligand_info["ligand"]
@@ -36,7 +34,6 @@ def filter_ligands():
                     ligand_intersections += 1
                 else:
                     ligand_deletions += 1
-            
             # Update the list of ligands in the chain
             grouped_complexes[protein][chain] = ligands_to_keep
             remaining_ligands += len(ligands_to_keep)
@@ -60,6 +57,7 @@ def filter_ligands():
     print()
     print(f"Ligands remaining after filtering: {remaining_ligands:,}")
     print("===========================================")
+
 
 if __name__ == "__main__":
     filter_ligands()

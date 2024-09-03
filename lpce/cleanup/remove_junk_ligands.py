@@ -48,7 +48,7 @@ def remove_junk_ligands_from_directory() -> None:
         None
     """
     input_directory = Path(PROCESSED_DIR)
-    with open('../data/trash_ligands.json', 'r') as file:
+    with open('data/trash_ligands.json', 'r') as file:
         junk_ligands = set(json.load(file))
     
     pdb_files = list(input_directory.rglob("*.pdb"))

@@ -20,7 +20,7 @@ def remove_water_from_directory() -> None:
     total_files = len(pdb_files)
     print(f"Found {total_files} PDB files in {input_directory}")
 
-    executable_path = "cleanup/remove_water"
+    executable_path = "lpce/cleanup/remove_water"
 
     for pdb_file in tqdm(pdb_files, desc="Removing water", unit="file", total=total_files):
         subprocess.run([executable_path, str(pdb_file)], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
