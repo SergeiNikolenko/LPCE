@@ -1,5 +1,6 @@
 from extraction.extract_complexes import extract_complexes
 from extraction.decompress_files import decompress_pdb_files
+from extraction.convert_pdb_to_smiles_sdf import convert_pdb_to_smiles_sdf
 from cleanup.remove_water import remove_water_from_directory
 from cleanup.remove_junk_ligands import remove_junk_ligands_from_directory
 from extraction.parse_dict import extract_and_save_complexes_with_ligands
@@ -11,6 +12,7 @@ def main():
     decompress_pdb_files()
     remove_water_from_directory()
     remove_junk_ligands_from_directory()
+    convert_pdb_to_smiles_sdf()
     extract_and_save_complexes_with_ligands()
     filter_ligands()
     send_email_notification(new_structures)
