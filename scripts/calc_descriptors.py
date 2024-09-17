@@ -2,7 +2,7 @@ import pandas as pd
 import datamol as dm
 import warnings
 from rdkit import RDLogger
-from pandarallel import pandarallel
+
 from joblib import Parallel, delayed
 
 from rdkit import rdBase
@@ -15,16 +15,18 @@ import warnings
 warnings.filterwarnings('ignore', category=UserWarning)
 warnings.filterwarnings('ignore', category=RuntimeWarning)
 
-
+from pandarallel import pandarallel
 pandarallel.initialize(progress_bar=False)
 
 # Загрузка данных
-data = pd.read_csv('data/standardized_ligands.csv')
+data = pd.read_csv('../data/standardized_ligands_sdf.csv')
 print("data load")
 
-smiles_column = "standard_smiles"
+smiles_column = "SMILES"
 
 data_unique = data.drop_duplicates(subset=[smiles_column]).copy()
+
+data_unique = data_unique[data_unique[smiles_column].notna()].copy()
 
 data_unique["mol"] = data_unique[smiles_column].parallel_apply(dm.to_mol)
 
@@ -54,7 +56,7 @@ descriptors = [desc for desc in descriptors if desc is not None]
 if descriptors:
     descriptors_df = pd.DataFrame(descriptors)
     descriptors_df.insert(0, smiles_column, data_unique[smiles_column].values[:len(descriptors_df)])
-    descriptors_df.to_parquet('data/train_descriptors.parquet')
+    descriptors_df.to_parquet('../data/train_descriptors.parquet')
     print("Descriptors saved to parquet file.")
 else:
     print("Descriptor computation failed for all molecules, no file was saved.")
