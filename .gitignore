@@ -2,4 +2,4 @@
 __pycache__/
 tmp*
 .pytest_cache/
-data/
+*.parquet
