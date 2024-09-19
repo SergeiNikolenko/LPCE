@@ -1,8 +1,10 @@
 import os
 from pathlib import Path
+
 import joblib
-from tqdm import tqdm
 from config.settings import PROCESSED_DIR
+from tqdm import tqdm
+
 
 def remove_dna_rna_from_directory():
     """
@@ -12,10 +14,12 @@ def remove_dna_rna_from_directory():
     files = list(Path(directory).glob("*.pdb"))
     total_files = len(files)
     retained_files = 0
-    
+
     def contains_dna_rna_sequence(content):
         nucleotides = {"A", "T", "G", "C", "U"}
-        seqres_lines = [line for line in content.splitlines() if line.startswith("SEQRES")]
+        seqres_lines = [
+            line for line in content.splitlines() if line.startswith("SEQRES")
+        ]
         atom_lines = [line for line in content.splitlines() if line.startswith("ATOM")]
 
         # Check SEQRES lines
@@ -32,14 +36,16 @@ def remove_dna_rna_from_directory():
         return False
 
     def process_file(file):
-        with open(file, "r") as f:
+        with open(file) as f:
             content = f.read()
             if contains_dna_rna_sequence(content):
                 os.remove(file)
                 return False
         return True
 
-    results = joblib.Parallel(n_jobs=-1)(joblib.delayed(process_file)(file) for file in tqdm(files))
+    results = joblib.Parallel(n_jobs=-1)(
+        joblib.delayed(process_file)(file) for file in tqdm(files)
+    )
     retained_files = sum(results)
 
     remaining_percentage = (retained_files / total_files) * 100
@@ -49,6 +55,7 @@ def remove_dna_rna_from_directory():
     print(f"Files retained after removal: {retained_files:,}")
     print(f"Percentage of files retained: {remaining_percentage:.2f}%")
     print("================================")
+
 
 if __name__ == "__main__":
     remove_dna_rna_from_directory()

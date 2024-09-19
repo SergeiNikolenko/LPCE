@@ -7,14 +7,18 @@ def filter_ligands():
     Filters ligands based on their presence in site
     information and saves updated complexes.
     """
-    with open(Path("data/grouped_complexes.json"), "r") as f:
+    with open(Path("data/grouped_complexes.json")) as f:
         grouped_complexes = json.load(f)
 
-    with open(Path("data/site_info.json"), "r") as f:
+    with open(Path("data/site_info.json")) as f:
         site_info = json.load(f)
 
     total_proteins_grouped = len(grouped_complexes)
-    total_ligands_grouped = sum(len(ligands) for chains in grouped_complexes.values() for ligands in chains.values())
+    total_ligands_grouped = sum(
+        len(ligands)
+        for chains in grouped_complexes.values()
+        for ligands in chains.values()
+    )
 
     total_proteins_site_info = len(site_info)
     ligand_intersections = 0
@@ -29,7 +33,10 @@ def filter_ligands():
             ligands_to_keep = []
             for ligand_info in ligands:
                 ligand_name = ligand_info["ligand"]
-                if ligand_name in site_info[protein] and chain in site_info[protein][ligand_name]:
+                if (
+                    ligand_name in site_info[protein]
+                    and chain in site_info[protein][ligand_name]
+                ):
                     ligands_to_keep.append(ligand_info)
                     ligand_intersections += 1
                 else:

@@ -1,8 +1,10 @@
+import subprocess
 from pathlib import Path
+
+from config.settings import PROCESSED_DIR
 from joblib import Parallel, delayed
 from tqdm import tqdm
-import subprocess
-from config.settings import PROCESSED_DIR
+
 
 def remove_water_from_directory() -> None:
     """
@@ -22,7 +24,9 @@ def remove_water_from_directory() -> None:
 
     executable_path = "lpce/cleanup/remove_water"
 
-    for pdb_file in tqdm(pdb_files, desc="Removing water", unit="file", total=total_files):
-        subprocess.run([executable_path, str(pdb_file)], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    for pdb_file in tqdm(
+        pdb_files, desc="Removing water", unit="file", total=total_files
+    ):
+        subprocess.run([executable_path, str(pdb_file)], capture_output=True)
 
     print(f"Total structures processed: {total_files}")
