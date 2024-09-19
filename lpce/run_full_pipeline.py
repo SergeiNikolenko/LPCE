@@ -13,14 +13,14 @@ from notifications.send_email import send_email_notification
 
 def main():
     new_structures = extract_complexes()
-    #decompress_pdb_files()
+    decompress_pdb_files()
     remove_dna_rna_from_directory()
-    #remove_water_from_directory()
-    #remove_junk_ligands_from_directory()
-    #convert_pdb_to_smiles_sdf()
-    #extract_and_save_complexes_with_ligands()
-    #filter_ligands()
-    #send_email_notification(new_structures)
+    remove_water_from_directory()
+    remove_junk_ligands_from_directory()
+    convert_pdb_to_smiles_sdf()
+    extract_and_save_complexes_with_ligands()
+    filter_ligands()
+    send_email_notification(new_structures)
 
 
 if __name__ == "__main__":

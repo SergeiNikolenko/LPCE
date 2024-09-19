@@ -7,7 +7,6 @@ dependencies:
   - biopython
   - tqdm
   - joblib
-  - json
   - yagmail
   - rsync
   - pathlib
@@ -16,7 +15,9 @@ dependencies:
   - pyarrow
   - ipykernel
   - fastparquet
-
+  - mols2grid
+  - pandarallel
+  - numpy
   - pip:
     - python-dotenv
     - tqdm

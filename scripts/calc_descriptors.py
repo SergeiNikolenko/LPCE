@@ -22,6 +22,11 @@ pandarallel.initialize(progress_bar=False)
 data = pd.read_csv('../data/standardized_ligands_sdf.csv')
 print("data load")
 
+print(data.shape)
+data['SMILES'] = data['SMILES'].str.split('.')
+data = data.explode('SMILES')
+print(data.shape)
+
 smiles_column = "SMILES"
 
 data_unique = data.drop_duplicates(subset=[smiles_column]).copy()
