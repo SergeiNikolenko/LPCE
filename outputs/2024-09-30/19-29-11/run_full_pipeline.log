@@ -1,0 +1,19 @@
+[2024-09-30 19:29:13,298][prefect][INFO] - Starting server on http://127.0.0.1:8126
+[2024-09-30 19:29:17,665][httpx][INFO] - HTTP Request: GET http://127.0.0.1:8126/api/health "HTTP/1.1 200 OK"
+[2024-09-30 19:29:17,724][httpx][INFO] - HTTP Request: GET http://127.0.0.1:8126/api/admin/version "HTTP/1.1 200 OK"
+[2024-09-30 19:29:17,734][httpx][INFO] - HTTP Request: GET http://127.0.0.1:8126/api/csrf-token?client=154d9857-b241-4ae5-b0eb-b7911d6e1f03 "HTTP/1.1 422 Unprocessable Entity"
+[2024-09-30 19:29:17,786][httpx][INFO] - HTTP Request: POST http://127.0.0.1:8126/api/flows/ "HTTP/1.1 201 Created"
+[2024-09-30 19:29:17,846][httpx][INFO] - HTTP Request: POST http://127.0.0.1:8126/api/flow_runs/ "HTTP/1.1 201 Created"
+[2024-09-30 19:29:17,866][prefect.engine][INFO] - Created flow run 'dramatic-hippo' for flow 'pipeline'
+[2024-09-30 19:29:17,912][httpx][INFO] - HTTP Request: POST http://127.0.0.1:8126/api/flow_runs/ff9410b9-6145-4217-84f8-282b771148bd/set_state "HTTP/1.1 201 Created"
+[2024-09-30 19:29:17,936][httpx][INFO] - HTTP Request: GET http://127.0.0.1:8126/api/flow_runs/ff9410b9-6145-4217-84f8-282b771148bd "HTTP/1.1 200 OK"
+[2024-09-30 19:29:17,983][prefect.task_runs][INFO] - Created task run 'run_extract_complexes-ee2' for task 'run_extract_complexes'
+[2024-09-30 19:29:18,021][httpx][INFO] - HTTP Request: GET http://127.0.0.1:8126/api/flows/b5669118-d2fc-4bde-97bf-893bb0127a25 "HTTP/1.1 200 OK"
+[2024-09-30 19:29:18,184][prefect.task_runs][ERROR] - Crash detected! Execution was aborted by Python system exit call.
+[2024-09-30 19:29:18,185][prefect.task_runs][ERROR] - Finished in state Crashed('Execution was aborted by Python system exit call.')
+[2024-09-30 19:29:18,187][prefect.flow_runs][ERROR] - Crash detected! Execution was aborted by Python system exit call.
+[2024-09-30 19:29:18,248][httpx][INFO] - HTTP Request: POST http://127.0.0.1:8126/api/flow_runs/ff9410b9-6145-4217-84f8-282b771148bd/set_state "HTTP/1.1 201 Created"
+[2024-09-30 19:29:18,250][prefect.flow_runs][ERROR] - Finished in state Crashed('Execution was aborted by Python system exit call.')
+[2024-09-30 19:29:18,267][httpx][INFO] - HTTP Request: GET http://127.0.0.1:8126/api/csrf-token?client=b3331bcd-1124-45a1-bdb4-1091f557ec82 "HTTP/1.1 422 Unprocessable Entity"
+[2024-09-30 19:29:18,291][httpx][INFO] - HTTP Request: POST http://127.0.0.1:8126/api/logs/ "HTTP/1.1 201 Created"
+[2024-09-30 19:29:18,306][prefect][INFO] - Stopping server on http://127.0.0.1:8126
