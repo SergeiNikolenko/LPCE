@@ -2,19 +2,10 @@ import json
 import re
 import string
 from pathlib import Path
-
 from Bio import PDB
-from config.settings import (
-    OUTPUT_COMPLEXES_JSON,
-    OUTPUT_GROUPED_COMPLEXES_JSON,
-    OUTPUT_SITE_INFO_JSON,
-    PROCESSED_DIR,
-    TRASH_LIGANDS_JSON,
-)
 from joblib import Parallel, delayed
 from tqdm import tqdm
-
-warnings = []
+from loguru import logger
 
 
 def parse_pdb_file(file_path: Path) -> list:
@@ -29,14 +20,14 @@ def parse_pdb_file(file_path: Path) -> list:
         Returns None if the file is empty or if an error occurs during parsing.
     """
     if file_path.stat().st_size == 0:
-        warnings.append(f"Warning: {file_path} is empty and will be skipped.")
+        logger.warning(f"{file_path} is empty and will be skipped.")
         return None
 
     parser = PDB.PDBParser(QUIET=True)
     try:
         structure = parser.get_structure("", file_path)
     except (ValueError, AttributeError) as e:
-        warnings.append(f"Error parsing {file_path}: {e}")
+        logger.error(f"Error parsing {file_path}: {e}")
         return None
 
     has_protein = False
@@ -91,10 +82,10 @@ def extract_complexes_with_ligands(pdb_directory: Path, max_files: int = None) -
     if max_files is not None:
         pdb_files = pdb_files[:max_files]
 
-    print(f"Starting to process {len(pdb_files)} PDB files...")
+    logger.info(f"Starting to process {len(pdb_files)} PDB files...")
 
     results = []
-    for result in Parallel(n_jobs=56)(
+    for result in Parallel(n_jobs=-1)(
         delayed(process_single_file)(pdb_file, pdb_directory)
         for pdb_file in tqdm(pdb_files, desc="Processing files", unit="file")
     ):
@@ -104,7 +95,7 @@ def extract_complexes_with_ligands(pdb_directory: Path, max_files: int = None) -
         pdb_id: ligands for pdb_id, ligands in results if ligands is not None
     }
 
-    print(f"Completed processing of {len(pdb_files)} PDB files.")
+    logger.info(f"Completed processing of {len(pdb_files)} PDB files.")
     return pdb_complexes
 
 
@@ -118,7 +109,7 @@ def save_complexes_to_json(complexes: dict, output_path: Path) -> None:
     """
     with open(output_path, "w") as f:
         json.dump(complexes, f, indent=4)
-    print(f"Complexes saved to {output_path}")
+    logger.info(f"Complexes saved to {output_path}")
 
 
 def create_grouped_complexes_dict(complexes: dict) -> dict:
@@ -250,30 +241,12 @@ def transform_site_info(site_info_dict: dict, trash_ligands: set) -> dict:
         dict: The transformed site information.
     """
     amino_acids = {
-        "ALA",
-        "ARG",
-        "ASN",
-        "ASP",
-        "CYS",
-        "GLU",
-        "GLN",
-        "GLY",
-        "HIS",
-        "ILE",
-        "LEU",
-        "LYS",
-        "MET",
-        "PHE",
-        "PRO",
-        "SER",
-        "THR",
-        "TRP",
-        "TYR",
-        "VAL",
+        "ALA", "ARG", "ASN", "ASP", "CYS", "GLU", "GLN", "GLY", "HIS",
+        "ILE", "LEU", "LYS", "MET", "PHE", "PRO", "SER", "THR", "TRP",
+        "TYR", "VAL"
     }
 
     to_exclude = amino_acids.union(trash_ligands)
-
     remove_digits = str.maketrans("", "", string.digits)
 
     transformed_dict = {}
@@ -305,46 +278,32 @@ def transform_site_info(site_info_dict: dict, trash_ligands: set) -> dict:
     return transformed_dict
 
 
-def print_warnings() -> None:
-    """
-    Prints any warnings that were collected during the execution of the program.
-    """
-    if warnings:
-        print("\nWarnings:")
-        for warning in warnings:
-            print(warning)
-    else:
-        print("\nNo warnings.")
-
-
-def extract_and_save_complexes_with_ligands(max_files: int = None) -> None:
+def extract_and_save_complexes_with_ligands(cfg) -> None:
     """
     Extracts complexes with ligands from PDB files, processes and saves them to JSON files.
 
     Args:
-        max_files (int, optional): Maximum number of files to process. Defaults to None.
+        cfg: Hydra configuration object with paths and logging settings.
     """
-    pdb_directory = Path(PROCESSED_DIR)
+    logger.add(cfg.logging.complexes_log_file, format="{time} | {level} | {message}", level="INFO")
 
-    complexes = extract_complexes_with_ligands(pdb_directory, max_files)
-    save_complexes_to_json(complexes, Path(OUTPUT_COMPLEXES_JSON))
+    pdb_directory = Path(cfg.paths.processed_dir)
+
+    complexes = extract_complexes_with_ligands(pdb_directory)
+    save_complexes_to_json(complexes, Path(cfg.output_files.complexes_json))
 
     grouped_complexes = create_grouped_complexes_dict(complexes)
-    save_complexes_to_json(grouped_complexes, Path(OUTPUT_GROUPED_COMPLEXES_JSON))
+    save_complexes_to_json(grouped_complexes, Path(cfg.output_files.grouped_complexes_json))
 
     site_info_dict = process_site_info_from_pdb_files(pdb_directory)
     final_cleaned_site_info_dict = {
         pdb_id: clean_site_info(site_info)
         for pdb_id, site_info in site_info_dict.items()
     }
-    trash_ligands = load_trash_ligands(Path(TRASH_LIGANDS_JSON))
+    trash_ligands = load_trash_ligands(Path(cfg.output_files.trash_ligands_json))
     final_transformed_site_info = transform_site_info(
         final_cleaned_site_info_dict, trash_ligands
     )
-    save_complexes_to_json(final_transformed_site_info, Path(OUTPUT_SITE_INFO_JSON))
+    save_complexes_to_json(final_transformed_site_info, Path(cfg.output_files.site_info_json))
 
-    print_warnings()
-
-
-if __name__ == "__main__":
-    extract_and_save_complexes_with_ligands()
+    logger.info("Completed processing and saving complexes with ligands.")

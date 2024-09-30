@@ -1,7 +1,7 @@
 paths:
   raw_dir: /mnt/ligandpro/db/lpce/raw/pdb
   processed_dir: /mnt/ligandpro/db/lpce/processed
-  output_lig: /mnt/ligandpro/db/lpce/ligands
+  ligands_dir: /mnt/ligandpro/db/lpce/ligands
 
 output_files:
   complexes_json: data/complexes.json

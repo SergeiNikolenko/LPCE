@@ -1,11 +1,9 @@
 import json
 from collections import defaultdict
 from pathlib import Path
-
-from config.settings import PROCESSED_DIR
 from joblib import Parallel, delayed
 from tqdm import tqdm
-
+from loguru import logger
 
 def remove_junk_ligands_from_file(input_file_path: Path, junk_ligands: set) -> dict:
     """
@@ -36,36 +34,45 @@ def remove_junk_ligands_from_file(input_file_path: Path, junk_ligands: set) -> d
 
         return ligand_counts
     except Exception as e:
-        print(f"Failed to process {input_file_path}: {e}")
+        logger.error(f"Failed to process {input_file_path}: {e}")
         return {"error": f"Error processing {input_file_path}: {e}"}
 
 
-def remove_junk_ligands_from_directory() -> None:
+def remove_junk_ligands_from_directory(cfg) -> None:
     """
     Processes all PDB files in the specified directory, removing junk ligands from each file.
 
-    The results are summarized and saved to a JSON file. The function also prints out statistics
-    about the number of files processed and the number of ligands removed.
+    Args:
+        cfg (DictConfig): Configuration dictionary with paths and logging settings.
 
     Returns:
         None
     """
-    input_directory = Path(PROCESSED_DIR)
-    with open("data/trash_ligands.json") as file:
+    input_directory = Path(cfg.paths.processed_dir)
+    junk_ligands_file = Path(cfg.output_files.trash_ligands_json)
+    summary_file_path = Path(cfg.output_files.removed_ligands_summary_json)
+    log_file = cfg.logging.remove_junk_ligands_log_file
+
+    # Setup logging to file
+    logger.add(log_file, format="{time} | {level} | {message}", level="INFO")
+
+    # Load junk ligands from JSON file
+    with open(junk_ligands_file) as file:
         junk_ligands = set(json.load(file))
 
+    # Get all PDB files in the processed directory
     pdb_files = list(input_directory.rglob("*.pdb"))
-
     total_files = len(pdb_files)
-    print(f"Found {total_files} PDB files in {input_directory}")
 
+    logger.info(f"Found {total_files} PDB files in {input_directory}")
+
+    # Process each file in parallel
     results = Parallel(n_jobs=-1)(
         delayed(remove_junk_ligands_from_file)(pdb_file, junk_ligands)
-        for pdb_file in tqdm(
-            pdb_files, desc="Removing junk ligands", unit="file", total=total_files
-        )
+        for pdb_file in tqdm(pdb_files, desc="Removing junk ligands", unit="file", total=total_files)
     )
 
+    # Summarize results
     total_ligand_counts = defaultdict(int)
     failed_files = 0
 
@@ -78,13 +85,13 @@ def remove_junk_ligands_from_directory() -> None:
 
     successful_files = total_files - failed_files
 
-    print(f"Total structures processed: {total_files}")
-    print(f"Successfully processed: {successful_files}")
-    print(f"Failed to process: {failed_files}")
+    logger.info(f"Total structures processed: {total_files}")
+    logger.info(f"Successfully processed: {successful_files}")
+    logger.info(f"Failed to process: {failed_files}")
 
-    print("Removed ligands summary:")
-    for ligand, count in total_ligand_counts.items():
-        print(f"{ligand}: {count} occurrences removed")
 
-    with open("../data/removed_ligands_summary.json", "w") as summary_file:
+    # Save the summary to a JSON file
+    with open(summary_file_path, "w") as summary_file:
         json.dump(total_ligand_counts, summary_file, indent=4)
+
+    logger.info(f"Summary of removed ligands saved to {summary_file_path}")

@@ -1,26 +1,22 @@
 import gzip
-import os
 import shutil
 from pathlib import Path
-
-from config.settings import PROCESSED_DIR, RAW_DIR
 from joblib import Parallel, delayed
 from tqdm import tqdm
-
+from loguru import logger
 
 def decompress_file(input_file_path: Path, output_file_path: Path) -> str:
     """
-    Decompresses a gzip-compressed PDB file and writes it to the specified output path.
+    Decompress a gzip-compressed PDB file and writes it to the specified output path.
 
     Args:
         input_file_path (Path): The path to the gzip-compressed PDB file.
         output_file_path (Path): The path where the decompressed PDB file will be saved.
 
     Returns:
-        str: A message indicating the outcome of the decompression ("File already exists",
-        "True" for success, or an error message).
+        str: "File already exists" if the output file already exists, "True" for success, or an error message if an error occurs.
     """
-    if os.path.exists(output_file_path):
+    if output_file_path.exists():
         return "File already exists"
 
     try:
@@ -29,14 +25,16 @@ def decompress_file(input_file_path: Path, output_file_path: Path) -> str:
                 shutil.copyfileobj(f_in, f_out)
         return True
     except EOFError as e:
+        logger.error(f"Error decompressing {input_file_path}: {e}")
         return f"Error decompressing {input_file_path}: {e}"
     except Exception as e:
+        logger.error(f"Unexpected error decompressing {input_file_path}: {e}")
         return f"Unexpected error decompressing {input_file_path}: {e}"
 
 
 def get_file_size_in_gb(file_path: Path) -> float:
     """
-    Calculates the size of a file in gigabytes.
+    Get the size of the specified file in gigabytes.
 
     Args:
         file_path (Path): The path to the file.
@@ -44,41 +42,39 @@ def get_file_size_in_gb(file_path: Path) -> float:
     Returns:
         float: The size of the file in gigabytes.
     """
-    return os.path.getsize(file_path) / (1024**3)
+    return file_path.stat().st_size / (1024**3)
 
 
-def decompress_pdb_files() -> None:
+def decompress_pdb_files(input_dir: Path, output_dir: Path, log_file: str) -> None:
     """
-    Decompresses all gzip-compressed PDB files in the RAW_DIR directory and saves them
-    in the PROCESSED_DIR directory.
+    Decompress all gzip-compressed PDB files in the input directory and save them
+    in the specified output directory. Logs the progress and statistics to the specified log file.
 
-    This function also prints out statistics about the number of files processed, the
-    number of successful decompressions, and the total size of compressed and decompressed files.
+    Args:
+        input_dir (Path): Directory containing the gzip-compressed files.
+        output_dir (Path): Directory to store the decompressed files.
+        log_file (str): Path to the log file for logging the decompression process.
 
     Returns:
         None
     """
-    os.makedirs(PROCESSED_DIR, exist_ok=True)
+    # Add a separate log file for the decompression process
+    logger.add(log_file, format="{time} | {level} | {message}", level="INFO")
 
-    input_output_paths = []
-    for root, _, files in os.walk(RAW_DIR):
-        for file in files:
-            if file.endswith(".ent.gz"):
-                input_file_path = os.path.join(root, file)
-                output_file_path = os.path.join(
-                    PROCESSED_DIR, file.replace(".ent.gz", ".pdb")
-                )
-                input_output_paths.append((input_file_path, output_file_path))
+    output_dir.mkdir(parents=True, exist_ok=True)
 
+    input_output_paths = [
+        (input_file, output_dir / input_file.name.replace(".ent.gz", ".pdb"))
+        for input_file in input_dir.rglob("*.ent.gz")
+    ]
     total_files = len(input_output_paths)
+
+    logger.info(f"Total .ent.gz files to decompress: {total_files}")
 
     results = Parallel(n_jobs=-1)(
         delayed(decompress_file)(input_path, output_path)
         for input_path, output_path in tqdm(
-            input_output_paths,
-            desc="Decompressing files",
-            unit="file",
-            total=total_files,
+            input_output_paths, desc="Decompressing files", unit="file", total=total_files
         )
     )
 
@@ -94,12 +90,12 @@ def decompress_pdb_files() -> None:
     decompressed_size = sum(
         get_file_size_in_gb(output_path)
         for _, output_path in input_output_paths
-        if os.path.exists(output_path)
+        if output_path.exists()
     )
 
-    print(f"Total structures processed: {total_files}")
-    print(f"Successfully decompressed: {successful_files}")
-    print(f"Skipped (already exists): {skipped_files}")
-    print(f"Failed to decompress: {failed_files}")
-    print(f"Total size of compressed files: {compressed_size:.2f} GB")
-    print(f"Total size of decompressed files: {decompressed_size:.2f} GB")
+    logger.info(f"Total structures processed: {total_files}")
+    logger.info(f"Successfully decompressed: {successful_files}")
+    logger.info(f"Skipped (already exists): {skipped_files}")
+    logger.info(f"Failed to decompress: {failed_files}")
+    logger.info(f"Total size of compressed files: {compressed_size:.2f} GB")
+    logger.info(f"Total size of decompressed files: {decompressed_size:.2f} GB")

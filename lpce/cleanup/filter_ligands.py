@@ -1,16 +1,29 @@
 import json
 from pathlib import Path
+from loguru import logger
 
+def filter_ligands(cfg):
+    """
+    Filters ligands based on their presence in site information and saves updated complexes.
 
-def filter_ligands():
+    Args:
+        cfg (DictConfig): Configuration object containing paths and log file locations.
+
+    Returns:
+        None
     """
-    Filters ligands based on their presence in site
-    information and saves updated complexes.
-    """
-    with open(Path("data/grouped_complexes.json")) as f:
+    input_complexes = Path(cfg.output_files.grouped_complexes_json)
+    input_site_info = Path(cfg.output_files.site_info_json)
+    output_filtered = Path(cfg.output_files.filtered_ligands_json)
+    log_file = cfg.logging.ligand_filter_log_file
+
+    # Adding a separate log file for ligand filtering
+    logger.add(log_file, format="{time} | {level} | {message}", level="INFO")
+
+    with open(input_complexes) as f:
         grouped_complexes = json.load(f)
 
-    with open(Path("data/site_info.json")) as f:
+    with open(input_site_info) as f:
         site_info = json.load(f)
 
     total_proteins_grouped = len(grouped_complexes)
@@ -41,30 +54,20 @@ def filter_ligands():
                     ligand_intersections += 1
                 else:
                     ligand_deletions += 1
-            # Update the list of ligands in the chain
             grouped_complexes[protein][chain] = ligands_to_keep
             remaining_ligands += len(ligands_to_keep)
 
-    # Save updated data if needed
-    with open(Path("data/site_removed_complexes.json"), "w") as f:
+    with open(output_filtered, "w") as f:
         json.dump(grouped_complexes, f, indent=4)
 
-    percent_deleted = (ligand_deletions / total_ligands_grouped) * 100
+    percent_deleted = (ligand_deletions / total_ligands_grouped) * 100 if total_ligands_grouped else 0
 
-    # Print statistics
-    print("=== Protein and Ligand Filtering Summary ===")
-    print(f"Total proteins analyzed: {total_proteins_grouped:,}")
-    print(f"Total ligands analyzed: {total_ligands_grouped:,}")
-    print()
-    print(f"Proteins with site info available: {total_proteins_site_info:,}")
-    print(f"Relevant ligands found in sites: {ligand_intersections:,}")
-    print()
-    print(f"Ligands removed during filtering: {ligand_deletions:,}")
-    print(f"Percentage of ligands removed: {percent_deleted:.1f}%")
-    print()
-    print(f"Ligands remaining after filtering: {remaining_ligands:,}")
-    print("===========================================")
-
-
-if __name__ == "__main__":
-    filter_ligands()
+    logger.info("=== Protein and Ligand Filtering Summary ===")
+    logger.info(f"Total proteins analyzed: {total_proteins_grouped:,}")
+    logger.info(f"Total ligands analyzed: {total_ligands_grouped:,}")
+    logger.info(f"Proteins with site info available: {total_proteins_site_info:,}")
+    logger.info(f"Relevant ligands found in sites: {ligand_intersections:,}")
+    logger.info(f"Ligands removed during filtering: {ligand_deletions:,}")
+    logger.info(f"Percentage of ligands removed: {percent_deleted:.1f}%")
+    logger.info(f"Ligands remaining after filtering: {remaining_ligands:,}")
+    logger.info("===========================================")
