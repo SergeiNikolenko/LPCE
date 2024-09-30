@@ -2,6 +2,7 @@ import json
 from pathlib import Path
 from loguru import logger
 
+
 def filter_ligands(cfg):
     """
     Filters ligands based on their presence in site information and saves updated complexes.
@@ -60,7 +61,9 @@ def filter_ligands(cfg):
     with open(output_filtered, "w") as f:
         json.dump(grouped_complexes, f, indent=4)
 
-    percent_deleted = (ligand_deletions / total_ligands_grouped) * 100 if total_ligands_grouped else 0
+    percent_deleted = (
+        (ligand_deletions / total_ligands_grouped) * 100 if total_ligands_grouped else 0
+    )
 
     logger.info("=== Protein and Ligand Filtering Summary ===")
     logger.info(f"Total proteins analyzed: {total_proteins_grouped:,}")

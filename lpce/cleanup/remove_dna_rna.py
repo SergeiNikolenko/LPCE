@@ -4,6 +4,7 @@ import joblib
 from tqdm import tqdm
 from loguru import logger
 
+
 def contains_dna_rna_sequence(content: str) -> bool:
     """
     Checks if the content of a PDB file contains DNA or RNA sequences in SEQRES or ATOM lines.
@@ -47,7 +48,7 @@ def process_file(file: Path) -> bool:
             content = f.read()
             if contains_dna_rna_sequence(content):
                 os.remove(file)
-                #logger.info(f"Removed file {file} containing DNA/RNA sequences.")
+                # logger.info(f"Removed file {file} containing DNA/RNA sequences.")
                 return False
         return True
     except Exception as e:
@@ -74,7 +75,8 @@ def remove_dna_rna_from_directory(input_dir: Path, log_file: str) -> None:
     logger.info(f"Total PDB files to analyze: {total_files}")
 
     results = joblib.Parallel(n_jobs=-1)(
-        joblib.delayed(process_file)(file) for file in tqdm(files, desc="Removing DNA/RNA")
+        joblib.delayed(process_file)(file)
+        for file in tqdm(files, desc="Removing DNA/RNA")
     )
     retained_files = sum(results)
 

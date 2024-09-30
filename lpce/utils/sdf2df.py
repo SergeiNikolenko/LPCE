@@ -1,7 +1,6 @@
 import logging
 from pathlib import Path
 
-import datamol as dm
 import pandas as pd
 from joblib import Parallel, delayed
 from rdkit import Chem
@@ -11,6 +10,11 @@ from tqdm import tqdm
 logging.basicConfig(level=logging.ERROR)
 
 sdf_directory = Path("/mnt/ligandpro/db/PDB/pdb2/lig/sdf_files")
+
+
+def clean_ligand_info(ligand_info):
+    # Тут нет логики, просто возвращаем то, что пришло
+    return ligand_info
 
 
 def extract_ligand_and_chain(ligand_info):
@@ -28,7 +32,7 @@ def process_sdf_file(filepath):
     try:
         supplier = SDMolSupplier(str(filepath), sanitize=False, removeHs=False)
         pdb_id = filepath.stem.replace("pdb", "")
-    except Exception as e:
+    except Exception:
         return local_data, local_processed, local_successful
 
     for mol in supplier:
@@ -46,7 +50,7 @@ def process_sdf_file(filepath):
 
         try:
             ligand_info = mol.GetProp("_Name").strip() if mol.HasProp("_Name") else ""
-        except Exception as e:
+        except Exception:
             ligand_info = "unknown"
 
         if "/" in ligand_info:

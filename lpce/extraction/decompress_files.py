@@ -5,6 +5,7 @@ from joblib import Parallel, delayed
 from tqdm import tqdm
 from loguru import logger
 
+
 def decompress_file(input_file_path: Path, output_file_path: Path) -> str:
     """
     Decompress a gzip-compressed PDB file and writes it to the specified output path.
@@ -74,7 +75,10 @@ def decompress_pdb_files(input_dir: Path, output_dir: Path, log_file: str) -> No
     results = Parallel(n_jobs=-1)(
         delayed(decompress_file)(input_path, output_path)
         for input_path, output_path in tqdm(
-            input_output_paths, desc="Decompressing files", unit="file", total=total_files
+            input_output_paths,
+            desc="Decompressing files",
+            unit="file",
+            total=total_files,
         )
     )
 

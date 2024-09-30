@@ -5,6 +5,7 @@ from joblib import Parallel, delayed
 from tqdm import tqdm
 from loguru import logger
 
+
 def process_pdb_file(pdb_file_path, smiles_output_dir, sdf_output_dir):
     """
     Processes a single PDB file to extract HETATM blocks, converts them to SMILES and SDF formats,

@@ -5,6 +5,7 @@ from joblib import Parallel, delayed
 from tqdm import tqdm
 from loguru import logger
 
+
 def remove_junk_ligands_from_file(input_file_path: Path, junk_ligands: set) -> dict:
     """
     Removes junk ligands from a PDB file and writes the cleaned content back to the same file.
@@ -69,7 +70,9 @@ def remove_junk_ligands_from_directory(cfg) -> None:
     # Process each file in parallel
     results = Parallel(n_jobs=-1)(
         delayed(remove_junk_ligands_from_file)(pdb_file, junk_ligands)
-        for pdb_file in tqdm(pdb_files, desc="Removing junk ligands", unit="file", total=total_files)
+        for pdb_file in tqdm(
+            pdb_files, desc="Removing junk ligands", unit="file", total=total_files
+        )
     )
 
     # Summarize results
@@ -88,7 +91,6 @@ def remove_junk_ligands_from_directory(cfg) -> None:
     logger.info(f"Total structures processed: {total_files}")
     logger.info(f"Successfully processed: {successful_files}")
     logger.info(f"Failed to process: {failed_files}")
-
 
     # Save the summary to a JSON file
     with open(summary_file_path, "w") as summary_file:

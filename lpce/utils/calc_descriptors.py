@@ -1,19 +1,14 @@
 import warnings
-
+from pandarallel import pandarallel
 import datamol as dm
 import pandas as pd
 from joblib import Parallel, delayed
-from rdkit import RDLogger, rdBase
-from rdkit.Chem import AllChem
+from rdkit import rdBase
 
 rdBase.DisableLog("rdApp.*")
 
-import warnings
-
 warnings.filterwarnings("ignore", category=UserWarning)
 warnings.filterwarnings("ignore", category=RuntimeWarning)
-
-from pandarallel import pandarallel
 
 pandarallel.initialize(progress_bar=False)
 
@@ -48,7 +43,7 @@ print(
 def safe_compute_descriptors(mol):
     try:
         return dm.descriptors.compute_many_descriptors(mol)
-    except Exception as e:
+    except Exception:
         return None
 
 

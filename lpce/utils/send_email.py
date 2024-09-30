@@ -1,8 +1,14 @@
 from loguru import logger
 import yagmail
-from pathlib import Path
 
-def send_email_notification(new_structures: int, email_user: str, email_password: str, receiver_email: str, log_file: str):
+
+def send_email_notification(
+    new_structures: int,
+    email_user: str,
+    email_password: str,
+    receiver_email: str,
+    log_file: str,
+):
     """
     Send an email notification after the PDB extraction job completes.
 
@@ -20,11 +26,15 @@ def send_email_notification(new_structures: int, email_user: str, email_password
     logger.add(log_file, format="{time} | {level} | {message}", level="INFO")
 
     subject = "PDB Extraction Job Completed"
-    body = f"The job has completed successfully. {new_structures} new ligands were added."
+    body = (
+        f"The job has completed successfully. {new_structures} new ligands were added."
+    )
 
     try:
         yag = yagmail.SMTP(email_user, email_password)
         yag.send(to=receiver_email, subject=subject, contents=body)
-        logger.info(f"Email sent to {receiver_email} from {email_user} with subject '{subject}' and body '{body}'")
+        logger.info(
+            f"Email sent to {receiver_email} from {email_user} with subject '{subject}' and body '{body}'"
+        )
     except Exception as e:
         logger.error(f"Failed to send email to {receiver_email}: {e}")

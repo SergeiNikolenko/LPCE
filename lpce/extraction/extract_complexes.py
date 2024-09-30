@@ -19,7 +19,9 @@ def count_structures(directory: Path) -> int:
     return sum(1 for _ in directory_path.rglob("*.ent.gz"))
 
 
-def extract_complexes(raw_dir: Path, rsync_port: int = 33444, rsync_host: str = "rsync.rcsb.org") -> int:
+def extract_complexes(
+    raw_dir: Path, rsync_port: int = 33444, rsync_host: str = "rsync.rcsb.org"
+) -> int:
     """
     Synchronizes PDB structures from the RCSB PDB FTP server to the local directory specified by RAW_DIR.
 
@@ -79,12 +81,16 @@ def extract_complexes(raw_dir: Path, rsync_port: int = 33444, rsync_host: str = 
             if process.returncode == 0:
                 final_count = count_structures(output_path)
                 new_structures = final_count - initial_count
-                logger.info(f"Complexes successfully extracted and saved to {output_path}")
+                logger.info(
+                    f"Complexes successfully extracted and saved to {output_path}"
+                )
                 logger.info(f"Total structures: {final_count}")
                 logger.info(f"New structures added: {new_structures}")
                 return new_structures
             else:
-                logger.error(f"rsync finished with errors, return code: {process.returncode}")
+                logger.error(
+                    f"rsync finished with errors, return code: {process.returncode}"
+                )
                 logger.error(process.stderr.read())
                 return 0
 

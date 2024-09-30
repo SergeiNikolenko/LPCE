@@ -241,9 +241,26 @@ def transform_site_info(site_info_dict: dict, trash_ligands: set) -> dict:
         dict: The transformed site information.
     """
     amino_acids = {
-        "ALA", "ARG", "ASN", "ASP", "CYS", "GLU", "GLN", "GLY", "HIS",
-        "ILE", "LEU", "LYS", "MET", "PHE", "PRO", "SER", "THR", "TRP",
-        "TYR", "VAL"
+        "ALA",
+        "ARG",
+        "ASN",
+        "ASP",
+        "CYS",
+        "GLU",
+        "GLN",
+        "GLY",
+        "HIS",
+        "ILE",
+        "LEU",
+        "LYS",
+        "MET",
+        "PHE",
+        "PRO",
+        "SER",
+        "THR",
+        "TRP",
+        "TYR",
+        "VAL",
     }
 
     to_exclude = amino_acids.union(trash_ligands)
@@ -285,7 +302,11 @@ def extract_and_save_complexes_with_ligands(cfg) -> None:
     Args:
         cfg: Hydra configuration object with paths and logging settings.
     """
-    logger.add(cfg.logging.complexes_log_file, format="{time} | {level} | {message}", level="INFO")
+    logger.add(
+        cfg.logging.complexes_log_file,
+        format="{time} | {level} | {message}",
+        level="INFO",
+    )
 
     pdb_directory = Path(cfg.paths.processed_dir)
 
@@ -293,7 +314,9 @@ def extract_and_save_complexes_with_ligands(cfg) -> None:
     save_complexes_to_json(complexes, Path(cfg.output_files.complexes_json))
 
     grouped_complexes = create_grouped_complexes_dict(complexes)
-    save_complexes_to_json(grouped_complexes, Path(cfg.output_files.grouped_complexes_json))
+    save_complexes_to_json(
+        grouped_complexes, Path(cfg.output_files.grouped_complexes_json)
+    )
 
     site_info_dict = process_site_info_from_pdb_files(pdb_directory)
     final_cleaned_site_info_dict = {
@@ -304,6 +327,8 @@ def extract_and_save_complexes_with_ligands(cfg) -> None:
     final_transformed_site_info = transform_site_info(
         final_cleaned_site_info_dict, trash_ligands
     )
-    save_complexes_to_json(final_transformed_site_info, Path(cfg.output_files.site_info_json))
+    save_complexes_to_json(
+        final_transformed_site_info, Path(cfg.output_files.site_info_json)
+    )
 
     logger.info("Completed processing and saving complexes with ligands.")

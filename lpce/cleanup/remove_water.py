@@ -1,8 +1,8 @@
 import subprocess
 from pathlib import Path
-from joblib import Parallel, delayed
 from tqdm import tqdm
 from loguru import logger
+
 
 def remove_water_from_directory(input_dir: Path, log_file: str) -> None:
     """
@@ -28,12 +28,18 @@ def remove_water_from_directory(input_dir: Path, log_file: str) -> None:
 
     executable_path = "lpce/cleanup/remove_water"
 
-    for pdb_file in tqdm(pdb_files, desc="Removing water", unit="file", total=total_files):
-        result = subprocess.run([executable_path, str(pdb_file)], capture_output=True, text=True)
+    for pdb_file in tqdm(
+        pdb_files, desc="Removing water", unit="file", total=total_files
+    ):
+        result = subprocess.run(
+            [executable_path, str(pdb_file)], capture_output=True, text=True
+        )
 
         if result.returncode == 0:
             pass
         else:
-            logger.error(f"Failed to remove water from {pdb_file}. Error: {result.stderr}")
+            logger.error(
+                f"Failed to remove water from {pdb_file}. Error: {result.stderr}"
+            )
 
     logger.info(f"Total structures processed: {total_files}")
