@@ -5,19 +5,14 @@ import sys
 from hydra import initialize, compose
 from loguru import logger
 
-
 sys.path.append(str(Path(__file__).resolve().parent.parent))
-
 from cleanup.remove_dna_rna import remove_dna_rna_from_directory
 from cleanup.remove_water import remove_water_from_directory
 from cleanup.remove_junk_ligands import remove_junk_ligands_from_directory
+from cleanup.remove_empty_structures import remove_unused_pdb_files
 from extraction.convert_pdb_to_smiles_sdf import convert_pdb_to_smiles_sdf
 from extraction.parse_dict import extract_and_save_complexes_with_ligands
 from cleanup.filter_ligands import filter_ligands
-
-# from extraction.separate_complexes import separate_complexes
-
-from utils.send_email import send_email_notification
 
 
 def test_run_pipeline():
@@ -58,12 +53,16 @@ def test_run_pipeline():
         test_cfg.output_files.filtered_ligands_json = str(
             temp_path / "filtered_ligands.json"
         )
+        test_cfg.output_files.cleaned_complexes_json = str(
+            temp_path / "cleaned_complexes.json"
+        )
         shutil.copytree(test_data_dir, processed_dir, dirs_exist_ok=True)
 
         logger.info(f"Running tests in temporary directory: {processed_dir}")
 
         # Проверка наличия PDB файлов в директории
         pdb_files = list(processed_dir.glob("*.pdb"))
+        logger.info(f"PDB files found: {len(pdb_files)}")
         if not pdb_files:
             logger.warning("No PDB files found in the processed directory for testing.")
 
@@ -74,18 +73,25 @@ def test_run_pipeline():
             input_dir=processed_dir, log_file=cfg.logging.water_removal_log_file
         )
         remove_junk_ligands_from_directory(test_cfg)
-        convert_pdb_to_smiles_sdf(input_dir=processed_dir, output_dir=ligands_dir)
+        convert_pdb_to_smiles_sdf(
+            input_dir=processed_dir,
+            output_dir=ligands_dir,
+            log_file=cfg.logging.ligand_conversion_log_file,
+        )
         extract_and_save_complexes_with_ligands(test_cfg)
         filter_ligands(test_cfg)
+        remove_unused_pdb_files(test_cfg)
 
-        send_email_notification(
-            new_structures="test",
-            email_user=cfg.email.user,
-            email_password=cfg.email.password,
-            receiver_email=cfg.email.recipient,
-            log_file=cfg.logging.email_log_file,
-        )
+        # send_email_notification(new_structures="test",email_user=cfg.email.user,email_password=cfg.email.password,receiver_email=cfg.email.recipient,log_file=cfg.logging.email_log_file)
+
+        logger.info("mail notification sent")
         logger.info(f"Test pipeline completed successfully in {temp_path}")
+
+        processed_path = Path("./lpce/tests/processed")
+
+        if processed_path.exists():
+            shutil.rmtree(processed_path)
+        shutil.copytree(processed_dir, processed_path, dirs_exist_ok=True)
 
 
 if __name__ == "__main__":

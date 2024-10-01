@@ -15,7 +15,23 @@ def contains_dna_rna_sequence(content: str) -> bool:
     Returns:
         bool: True if the file contains DNA or RNA sequences, False otherwise.
     """
-    nucleotides = {"A", "T", "G", "C", "U"}
+    nucleotides = {
+        "A",
+        "T",
+        "G",
+        "C",
+        "U",
+        "DA",
+        "DT",
+        "DG",
+        "DC",
+        "DU",
+        "RA",
+        "RT",
+        "RG",
+        "RC",
+        "RU",
+    }
     seqres_lines = [line for line in content.splitlines() if line.startswith("SEQRES")]
     atom_lines = [line for line in content.splitlines() if line.startswith("ATOM")]
 
@@ -67,8 +83,12 @@ def remove_dna_rna_from_directory(input_dir: Path, log_file: str) -> None:
     Returns:
         None
     """
-    logger.add(log_file, format="{time} | {level} | {message}", level="INFO")
-
+    logger.add(
+        log_file,
+        format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {message}",
+        level="INFO",
+    )
+    logger.info("========== Removing DNA/RNA ==========")
     files = list(input_dir.glob("*.pdb"))
     total_files = len(files)
 
@@ -82,8 +102,6 @@ def remove_dna_rna_from_directory(input_dir: Path, log_file: str) -> None:
 
     remaining_percentage = (retained_files / total_files) * 100
 
-    logger.info("=== DNA/RNA Removal Summary ===")
     logger.info(f"Total files analyzed: {total_files:,}")
     logger.info(f"Files retained after removal: {retained_files:,}")
     logger.info(f"Percentage of files retained: {remaining_percentage:.2f}%")
-    logger.info("================================")

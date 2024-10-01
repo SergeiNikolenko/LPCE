@@ -304,14 +304,15 @@ def extract_and_save_complexes_with_ligands(cfg) -> None:
     """
     logger.add(
         cfg.logging.complexes_log_file,
-        format="{time} | {level} | {message}",
+        format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {message}",
         level="INFO",
     )
+    logger.info("========== Extracting and Saving Complexes with Ligands ==========")
 
     pdb_directory = Path(cfg.paths.processed_dir)
 
     complexes = extract_complexes_with_ligands(pdb_directory)
-    save_complexes_to_json(complexes, Path(cfg.output_files.complexes_json))
+    # save_complexes_to_json(complexes, Path(cfg.output_files.complexes_json))
 
     grouped_complexes = create_grouped_complexes_dict(complexes)
     save_complexes_to_json(
@@ -330,5 +331,3 @@ def extract_and_save_complexes_with_ligands(cfg) -> None:
     save_complexes_to_json(
         final_transformed_site_info, Path(cfg.output_files.site_info_json)
     )
-
-    logger.info("Completed processing and saving complexes with ligands.")

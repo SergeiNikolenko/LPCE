@@ -92,7 +92,7 @@ def process_pdb_file(pdb_file_path, smiles_output_dir, sdf_output_dir):
         return 0
 
 
-def convert_pdb_to_smiles_sdf(input_dir: Path, output_dir: Path) -> None:
+def convert_pdb_to_smiles_sdf(input_dir: Path, output_dir: Path, log_file: str) -> None:
     """
     Processes all PDB files in the input directory by extracting ligands and converting
     them to SMILES and SDF formats. The results are saved in the output directories.
@@ -113,6 +113,12 @@ def convert_pdb_to_smiles_sdf(input_dir: Path, output_dir: Path) -> None:
     pdb_files = list(input_dir.glob("*.pdb"))
     total_files = len(pdb_files)
 
+    logger.add(
+        log_file,
+        format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {message}",
+        level="INFO",
+    )
+    logger.info("========== Converting PDB to SMILES and SDF ==========")
     logger.info(f"Processing {total_files} PDB files from {input_dir}")
 
     results = Parallel(n_jobs=-1)(

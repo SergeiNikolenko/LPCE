@@ -13,7 +13,7 @@ warnings.filterwarnings("ignore", category=RuntimeWarning)
 pandarallel.initialize(progress_bar=False)
 
 # Загрузка данных
-data = pd.read_csv("../data/standardized_ligands_sdf.csv")
+data = pd.read_csv("data/standardized_ligands_sdf.csv")
 print("data load")
 
 print(data.shape)
@@ -60,7 +60,7 @@ if descriptors:
     descriptors_df.insert(
         0, smiles_column, data_unique[smiles_column].values[: len(descriptors_df)]
     )
-    descriptors_df.to_parquet("../data/train_descriptors.parquet")
+    descriptors_df.to_parquet("data/train_descriptors.parquet")
     print("Descriptors saved to parquet file.")
 else:
     print("Descriptor computation failed for all molecules, no file was saved.")

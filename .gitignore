@@ -4,4 +4,8 @@ tmp*
 .pytest_cache/
 *.parquet
 logs/
-test_data/
+lpce/tests/processed/*
+lpce/tests/test_data/*
+.DS_Store
+.ruff_cache/
+.mypy_cache/

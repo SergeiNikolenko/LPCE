@@ -19,7 +19,11 @@ def filter_ligands(cfg):
     log_file = cfg.logging.ligand_filter_log_file
 
     # Adding a separate log file for ligand filtering
-    logger.add(log_file, format="{time} | {level} | {message}", level="INFO")
+    logger.add(
+        log_file,
+        format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {message}",
+        level="INFO",
+    )
 
     with open(input_complexes) as f:
         grouped_complexes = json.load(f)
@@ -65,7 +69,7 @@ def filter_ligands(cfg):
         (ligand_deletions / total_ligands_grouped) * 100 if total_ligands_grouped else 0
     )
 
-    logger.info("=== Protein and Ligand Filtering Summary ===")
+    logger.info("========== Filtering Ligands ==========")
     logger.info(f"Total proteins analyzed: {total_proteins_grouped:,}")
     logger.info(f"Total ligands analyzed: {total_ligands_grouped:,}")
     logger.info(f"Proteins with site info available: {total_proteins_site_info:,}")
@@ -73,4 +77,4 @@ def filter_ligands(cfg):
     logger.info(f"Ligands removed during filtering: {ligand_deletions:,}")
     logger.info(f"Percentage of ligands removed: {percent_deleted:.1f}%")
     logger.info(f"Ligands remaining after filtering: {remaining_ligands:,}")
-    logger.info("===========================================")
+    logger.info("========== Filtering Ligands Complete ==========")

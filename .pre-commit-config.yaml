@@ -30,11 +30,6 @@ repos:
 
         files: .yaml$
 
-  - repo: https://github.com/Yelp/detect-secrets
-    rev: v1.2.0
-    hooks:
-
-      - id: detect-secrets
 
   - repo: https://github.com/psf/black
     rev: 23.1.0
@@ -47,7 +42,6 @@ repos:
       - id: ruff
         args: [ --fix ]
         exclude: \.ipynb$
-
 
 
   - repo: https://github.com/python-jsonschema/check-jsonschema

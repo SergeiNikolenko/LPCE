@@ -10,7 +10,7 @@ output_files:
   trash_ligands_json: data/trash_ligands.json
   removed_ligands_summary_json: data/removed_ligands_summary.json
   filtered_ligands_json: data/filtered_ligands.json
-
+  cleaned_complexes_json: data/cleaned_complexes.json
 
 email:
   user: ${oc.env:EMAIL_USER}
@@ -31,3 +31,5 @@ logging:
   ligand_filter_log_file: logs/ligand_filter_logfile.log
   separate_complexes_log_file: logs/separate_complexes_logfile.log
   email_log_file: logs/email_logfile.log
+  ligand_conversion_log_file: logs/ligand_conversion_logfile.log
+  pdb_cleanup_log_file: logs/pdb_cleanup_log_file.log

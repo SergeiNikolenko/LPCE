@@ -9,11 +9,10 @@ from tqdm import tqdm
 
 logging.basicConfig(level=logging.ERROR)
 
-sdf_directory = Path("/mnt/ligandpro/db/PDB/pdb2/lig/sdf_files")
+sdf_directory = Path("/mnt/ligandpro/db/lpce/ligands/sdf")
 
 
 def clean_ligand_info(ligand_info):
-    # Тут нет логики, просто возвращаем то, что пришло
     return ligand_info
 
 
@@ -84,7 +83,7 @@ for result in results:
     total_successful += result[2]
 
 df = pd.DataFrame(data)
-df.to_csv("../data/standardized_ligands_sdf.csv", index=False)
+df.to_csv("data/standardized_ligands_sdf.csv", index=False)
 
 success_rate = (total_successful / total_processed) * 100 if total_processed > 0 else 0
 print(f"Total molecules processed: {total_processed}")

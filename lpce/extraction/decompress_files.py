@@ -60,7 +60,12 @@ def decompress_pdb_files(input_dir: Path, output_dir: Path, log_file: str) -> No
         None
     """
     # Add a separate log file for the decompression process
-    logger.add(log_file, format="{time} | {level} | {message}", level="INFO")
+    logger.add(
+        log_file,
+        format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {message}",
+        level="INFO",
+    )
+    logger.info("========== Decompressing Files ==========")
 
     output_dir.mkdir(parents=True, exist_ok=True)
 

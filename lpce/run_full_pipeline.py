@@ -12,7 +12,6 @@ from extraction.convert_pdb_to_smiles_sdf import convert_pdb_to_smiles_sdf
 from extraction.decompress_files import decompress_pdb_files
 from extraction.extract_complexes import extract_complexes
 from extraction.parse_dict import extract_and_save_complexes_with_ligands
-from utils.send_email import send_email_notification
 
 
 def main():
@@ -26,9 +25,12 @@ def main():
     logger.remove()
     logger.add(sys.stdout, format="{message}", level="INFO")
     logger.add(
-        cfg.logging.log_file, format="{time} | {level} | {message}", level="INFO"
+        cfg.logging.log_file,
+        format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {message}",
+        level="INFO",
     )
 
+    logger.debug(f"Config: {cfg}")
     raw_dir = Path(cfg.paths.raw_dir)
     processed_dir = Path(cfg.paths.processed_dir)
 
@@ -36,7 +38,11 @@ def main():
         raw_dir=raw_dir, rsync_port=cfg.rsync.port, rsync_host=cfg.rsync.host
     )
 
-    decompress_pdb_files(input_dir=raw_dir, output_dir=processed_dir)
+    decompress_pdb_files(
+        input_dir=raw_dir,
+        output_dir=processed_dir,
+        log_file=cfg.logging.decompression_log_file,
+    )
     remove_dna_rna_from_directory(
         input_dir=processed_dir, log_file=cfg.logging.dna_rna_removal_log_file
     )
@@ -44,17 +50,16 @@ def main():
         input_dir=processed_dir, log_file=cfg.logging.water_removal_log_file
     )
     remove_junk_ligands_from_directory(cfg)
-    convert_pdb_to_smiles_sdf(input_dir=processed_dir, output_dir=cfg.paths.ligands_dir)
+    convert_pdb_to_smiles_sdf(
+        input_dir=processed_dir,
+        output_dir=Path(cfg.paths.ligands_dir),
+        log_file=cfg.logging.ligand_conversion_log_file,
+    )
     extract_and_save_complexes_with_ligands(cfg)
     filter_ligands(cfg)
+    # remove_unused_pdb_files(cfg)
 
-    send_email_notification(
-        new_structures=new_structures,
-        email_user=cfg.email.user,
-        email_password=cfg.email.password,
-        receiver_email=cfg.email.recipient,
-        log_file=cfg.logging.email_log_file,
-    )
+    # send_email_notification(new_structures=new_structures,email_user=cfg.email.user,email_password=cfg.email.password,receiver_email=cfg.email.recipient,log_file=cfg.logging.email_log_file)
 
 
 if __name__ == "__main__":
