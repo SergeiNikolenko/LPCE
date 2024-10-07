@@ -1,10 +1,11 @@
 import json
+import multiprocessing
 from collections import Counter
 from pathlib import Path
+
 from joblib import Parallel, delayed
-from tqdm import tqdm
 from loguru import logger
-import multiprocessing
+from tqdm import tqdm
 
 
 def remove_junk_ligands_from_file(input_file_path: Path, junk_ligands: set) -> dict:

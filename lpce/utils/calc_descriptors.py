@@ -1,8 +1,9 @@
 import warnings
-from pandarallel import pandarallel
+
 import datamol as dm
 import pandas as pd
 from joblib import Parallel, delayed
+from pandarallel import pandarallel
 from rdkit import rdBase
 
 rdBase.DisableLog("rdApp.*")

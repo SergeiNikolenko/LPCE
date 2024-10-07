@@ -1,7 +1,8 @@
 import subprocess
 from pathlib import Path
-from tqdm import tqdm
+
 from loguru import logger
+from tqdm import tqdm
 
 
 def remove_water_from_directory(input_dir: Path, log_file: str) -> None:

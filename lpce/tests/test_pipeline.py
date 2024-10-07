@@ -1,18 +1,19 @@
 import shutil
+import sys
 import tempfile
 from pathlib import Path
-import sys
-from hydra import initialize, compose
+
+from hydra import compose, initialize
 from loguru import logger
 
 sys.path.append(str(Path(__file__).resolve().parent.parent))
+from cleanup.filter_ligands import filter_ligands
 from cleanup.remove_dna_rna import remove_dna_rna_from_directory
-from cleanup.remove_water import remove_water_from_directory
-from cleanup.remove_junk_ligands import remove_junk_ligands_from_directory
 from cleanup.remove_empty_structures import remove_unused_pdb_files
+from cleanup.remove_junk_ligands import remove_junk_ligands_from_directory
+from cleanup.remove_water import remove_water_from_directory
 from extraction.convert_pdb_to_smiles_sdf import convert_pdb_to_smiles_sdf
 from extraction.parse_dict import extract_and_save_complexes_with_ligands
-from cleanup.filter_ligands import filter_ligands
 
 
 def test_run_pipeline():

@@ -1,8 +1,9 @@
 import subprocess
 import sys
 from pathlib import Path
-from tqdm import tqdm
+
 from loguru import logger
+from tqdm import tqdm
 
 
 def count_structures(directory: Path) -> int:

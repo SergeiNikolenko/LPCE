@@ -1,9 +1,10 @@
 import gzip
 import shutil
 from pathlib import Path
+
 from joblib import Parallel, delayed
-from tqdm import tqdm
 from loguru import logger
+from tqdm import tqdm
 
 
 def decompress_file(input_file_path: Path, output_file_path: Path) -> str:

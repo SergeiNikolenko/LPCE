@@ -1,9 +1,10 @@
 import subprocess
 import tempfile
 from pathlib import Path
+
 from joblib import Parallel, delayed
-from tqdm import tqdm
 from loguru import logger
+from tqdm import tqdm
 
 
 def process_pdb_file(pdb_file_path, smiles_output_dir, sdf_output_dir):

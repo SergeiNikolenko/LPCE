@@ -2,10 +2,11 @@ import json
 import re
 import string
 from pathlib import Path
+
 from Bio import PDB
 from joblib import Parallel, delayed
-from tqdm import tqdm
 from loguru import logger
+from tqdm import tqdm
 
 
 def parse_pdb_file(file_path: Path) -> list:

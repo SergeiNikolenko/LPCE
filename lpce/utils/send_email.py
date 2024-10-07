@@ -1,5 +1,5 @@
-from loguru import logger
 import yagmail
+from loguru import logger
 
 
 def send_email_notification(
