@@ -77,3 +77,9 @@ repos:
     hooks:
       - id: codespell
         files: \.(md)$
+
+  - repo: https://github.com/PyCQA/bandit
+    rev: 1.7.10
+    hooks:
+      - id: bandit
+        args: ["--skip", "B404,B603"]

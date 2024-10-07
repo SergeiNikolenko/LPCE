@@ -37,7 +37,10 @@ def remove_water_from_directory(input_dir: Path, log_file: str) -> None:
         pdb_files, desc="Removing water", unit="file", total=total_files
     ):
         result = subprocess.run(
-            [executable_path, str(pdb_file)], capture_output=True, text=True
+            [executable_path, str(pdb_file)],
+            capture_output=True,
+            text=True,
+            shell=False,
         )
 
         if result.returncode == 0:

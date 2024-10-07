@@ -65,7 +65,7 @@ def process_pdb_file(pdb_file_path, smiles_output_dir, sdf_output_dir):
                         str(temp_smiles_file),
                         "-osmi",
                     ]
-                    subprocess.run(command_smiles, capture_output=True)
+                    subprocess.run(command_smiles, capture_output=True, shell=False)
 
                     command_sdf = [
                         "obabel",
@@ -74,7 +74,7 @@ def process_pdb_file(pdb_file_path, smiles_output_dir, sdf_output_dir):
                         str(temp_sdf_file),
                         "-osdf",
                     ]
-                    subprocess.run(command_sdf, capture_output=True)
+                    subprocess.run(command_sdf, capture_output=True, shell=False)
 
                     if temp_smiles_file.exists():
                         with temp_smiles_file.open("r") as temp_file:
