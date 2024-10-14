@@ -1,10 +1,11 @@
 import os
+import sys
 from pathlib import Path
 
 import joblib
 from loguru import logger
 from tqdm import tqdm
-import sys
+
 
 def count_models_in_file(file_path: Path) -> int:
     """
@@ -18,9 +19,9 @@ def count_models_in_file(file_path: Path) -> int:
     """
     models = 0
     try:
-        with open(file_path, 'r') as file:
+        with open(file_path) as file:
             for line in file:
-                if line.startswith('MODEL'):
+                if line.startswith("MODEL"):
                     models += 1
         return models
     except Exception as e:
@@ -42,7 +43,7 @@ def process_file(file: Path) -> bool:
     if models > 1:
         try:
             os.remove(file)
-            #logger.debug(f"Removed file {file} containing {models} models.")
+            # logger.debug(f"Removed file {file} containing {models} models.")
             return False
         except Exception as e:
             logger.error(f"Error removing file {file}: {e}")
@@ -80,7 +81,9 @@ def remove_multiple_models_from_directory(input_dir: Path, log_file: str) -> Non
     )
     retained_files = sum(results)
     removed_files = total_files - retained_files
-    remaining_percentage = (retained_files / total_files * 100) if total_files > 0 else 0
+    remaining_percentage = (
+        (retained_files / total_files * 100) if total_files > 0 else 0
+    )
 
     logger.info(f"Total files analyzed: {total_files:,}")
     logger.info(f"Files retained after removal: {retained_files:,}")

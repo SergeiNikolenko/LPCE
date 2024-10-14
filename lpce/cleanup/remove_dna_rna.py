@@ -1,10 +1,11 @@
 import os
+import sys
 from pathlib import Path
 
 import joblib
 from loguru import logger
 from tqdm import tqdm
-import sys
+
 
 def contains_dna_rna_sequence(content: str) -> bool:
     """

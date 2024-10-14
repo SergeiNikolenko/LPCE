@@ -1,7 +1,7 @@
 import gzip
 import shutil
-from pathlib import Path
 import sys
+from pathlib import Path
 
 from joblib import Parallel, delayed
 from loguru import logger

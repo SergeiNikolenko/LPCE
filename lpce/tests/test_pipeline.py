@@ -11,12 +11,12 @@ from cleanup.filter_ligands import filter_ligands
 from cleanup.remove_dna_rna import remove_dna_rna_from_directory
 from cleanup.remove_empty_structures import remove_unused_pdb_files
 from cleanup.remove_junk_ligands import remove_junk_ligands_from_directory
-from cleanup.remove_water import remove_water_from_directory
 from cleanup.remove_multiple_models import remove_multiple_models_from_directory
-
+from cleanup.remove_water import remove_water_from_directory
 from extraction.convert_pdb_to_smiles_sdf import convert_pdb_to_smiles_sdf
 from extraction.parse_dict import extract_and_save_complexes_with_ligands
 from pdb_manipulations.split_bioml import bioml_split
+
 
 def test_run_pipeline():
     with initialize(config_path="../config", version_base=None):
@@ -73,7 +73,8 @@ def test_run_pipeline():
             input_dir=processed_dir, log_file=cfg.logging.dna_rna_removal_log_file
         )
         remove_multiple_models_from_directory(
-            input_dir=processed_dir, log_file=cfg.logging.multiple_models_removal_log_file
+            input_dir=processed_dir,
+            log_file=cfg.logging.multiple_models_removal_log_file,
         )
         remove_water_from_directory(
             input_dir=processed_dir, log_file=cfg.logging.water_removal_log_file

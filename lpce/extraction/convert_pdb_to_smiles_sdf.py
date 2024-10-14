@@ -1,11 +1,11 @@
 import subprocess
+import sys
 import tempfile
 from pathlib import Path
 
 from joblib import Parallel, delayed
 from loguru import logger
 from tqdm import tqdm
-import sys
 
 
 def process_pdb_file(pdb_file_path, smiles_output_dir, sdf_output_dir):
@@ -114,7 +114,7 @@ def convert_pdb_to_smiles_sdf(input_dir: Path, output_dir: Path, log_file: str) 
 
     pdb_files = list(input_dir.glob("*.pdb"))
     total_files = len(pdb_files)
-    
+
     logger.remove()
     logger.add(sys.stdout, format="{message}", level="INFO")
     logger.add(
