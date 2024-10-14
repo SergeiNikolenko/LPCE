@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 
 from loguru import logger
-
+import sys
 
 def filter_ligands(cfg):
     """
@@ -20,6 +20,8 @@ def filter_ligands(cfg):
     log_file = cfg.logging.ligand_filter_log_file
 
     # Adding a separate log file for ligand filtering
+    logger.remove()
+    logger.add(sys.stdout, format="{message}", level="INFO")
     logger.add(
         log_file,
         format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {message}",
@@ -78,4 +80,4 @@ def filter_ligands(cfg):
     logger.info(f"Ligands removed during filtering: {ligand_deletions:,}")
     logger.info(f"Percentage of ligands removed: {percent_deleted:.1f}%")
     logger.info(f"Ligands remaining after filtering: {remaining_ligands:,}")
-    logger.info("========== Filtering Ligands Complete ==========")
+

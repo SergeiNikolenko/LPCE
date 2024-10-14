@@ -7,6 +7,7 @@ from Bio import PDB
 from joblib import Parallel, delayed
 from loguru import logger
 from tqdm import tqdm
+import sys
 
 
 def parse_pdb_file(file_path: Path) -> list:
@@ -303,6 +304,8 @@ def extract_and_save_complexes_with_ligands(cfg) -> None:
     Args:
         cfg: Hydra configuration object with paths and logging settings.
     """
+    logger.remove()
+    logger.add(sys.stdout, format="{message}", level="INFO")
     logger.add(
         cfg.logging.complexes_log_file,
         format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {message}",

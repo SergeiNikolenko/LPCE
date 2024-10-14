@@ -1,6 +1,6 @@
 import json
 from pathlib import Path
-
+import sys
 from loguru import logger
 
 
@@ -9,6 +9,8 @@ def remove_unused_pdb_files(cfg):
     processed_dir = Path(cfg.paths.processed_dir)
     log_file = cfg.logging.pdb_cleanup_log_file
 
+    logger.remove()
+    logger.add(sys.stdout, format="{message}", level="INFO")
     logger.add(
         log_file,
         format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {message}",

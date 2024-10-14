@@ -35,6 +35,8 @@ def extract_complexes(
     """
     output_path = Path(raw_dir)
     output_path.mkdir(parents=True, exist_ok=True)
+    logger.remove()
+    logger.add(sys.stdout, format="{message}", level="INFO")
     logger.info("========== Extracting Complexes ==========")
 
     initial_count = count_structures(output_path)

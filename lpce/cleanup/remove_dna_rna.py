@@ -4,7 +4,7 @@ from pathlib import Path
 import joblib
 from loguru import logger
 from tqdm import tqdm
-
+import sys
 
 def contains_dna_rna_sequence(content: str) -> bool:
     """
@@ -44,7 +44,7 @@ def contains_dna_rna_sequence(content: str) -> bool:
 
     # Check ATOM lines for specific nucleotide atoms
     for line in atom_lines:
-        if line[17:20].strip() in nucleotides:
+        if line[17:22].strip() in nucleotides:
             return True
 
     return False
@@ -84,6 +84,8 @@ def remove_dna_rna_from_directory(input_dir: Path, log_file: str) -> None:
     Returns:
         None
     """
+    logger.remove()
+    logger.add(sys.stdout, format="{message}", level="INFO")
     logger.add(
         log_file,
         format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {message}",

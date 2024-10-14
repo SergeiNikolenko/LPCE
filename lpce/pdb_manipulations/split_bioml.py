@@ -241,8 +241,8 @@ def bioml_split(cfg):
     logger.remove()  # Remove default handler
 
     logger.add(sys.stdout, format="{message}", level="INFO")
-    logger.add(log_file, format="{time} | {level} | {message}", level="INFO")
-
+    logger.add(log_file, format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {message}", level="INFO")
+ 
     pdb_files = get_pdb_files(input_dir)
     total_files = len(pdb_files)
     logger.info(f"Total PDB files found: {total_files}")

@@ -3,7 +3,7 @@ from pathlib import Path
 
 from loguru import logger
 from tqdm import tqdm
-
+import sys
 
 def remove_water_from_directory(input_dir: Path, log_file: str) -> None:
     """
@@ -20,6 +20,8 @@ def remove_water_from_directory(input_dir: Path, log_file: str) -> None:
         None
     """
     # Add a separate log file for the water removal process
+    logger.remove()
+    logger.add(sys.stdout, format="{message}", level="INFO")
     logger.add(
         log_file,
         format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {message}",

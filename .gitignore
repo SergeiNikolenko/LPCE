@@ -5,6 +5,7 @@ tmp*
 *.parquet
 logs/
 lpce/tests/processed/*
+lpce/tests/bioml/*
 lpce/tests/test_data/*
 .DS_Store
 .ruff_cache/

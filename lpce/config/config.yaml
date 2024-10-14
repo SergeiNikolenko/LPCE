@@ -2,6 +2,7 @@ paths:
   raw_dir: /mnt/ligandpro/db/lpce/raw/pdb
   processed_dir: /mnt/ligandpro/db/lpce/processed
   ligands_dir: /mnt/ligandpro/db/lpce/ligands
+  bioml_dir: /mnt/ligandpro/db/lpce/bioml
 
 output_files:
   complexes_json: data/complexes.json
@@ -33,3 +34,5 @@ logging:
   email_log_file: logs/email_logfile.log
   ligand_conversion_log_file: logs/ligand_conversion_logfile.log
   pdb_cleanup_log_file: logs/pdb_cleanup_log_file.log
+  bioml_split_log_file: logs/bioml_split_log_file.log
+  multiple_models_removal_log_file: logs/multiple_models_removal_log_file.log

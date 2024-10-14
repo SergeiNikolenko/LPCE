@@ -5,6 +5,7 @@ all: run_pipeline
 
 run_pipeline:
 	clear
+	rm -rf /mnt/ligandpro/db/LPCE/*
 	python lpce/run_full_pipeline.py
 
 test:

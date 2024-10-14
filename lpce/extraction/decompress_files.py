@@ -1,6 +1,7 @@
 import gzip
 import shutil
 from pathlib import Path
+import sys
 
 from joblib import Parallel, delayed
 from loguru import logger
@@ -61,6 +62,7 @@ def decompress_pdb_files(input_dir: Path, output_dir: Path, log_file: str) -> No
         None
     """
     # Add a separate log file for the decompression process
+    logger.add(sys.stdout, format="{message}", level="INFO")
     logger.add(
         log_file,
         format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {message}",

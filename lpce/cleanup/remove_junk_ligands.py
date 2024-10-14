@@ -6,6 +6,7 @@ from pathlib import Path
 from joblib import Parallel, delayed
 from loguru import logger
 from tqdm import tqdm
+import sys
 
 
 def remove_junk_ligands_from_file(input_file_path: Path, junk_ligands: set) -> dict:
@@ -61,6 +62,8 @@ def remove_junk_ligands_from_directory(cfg) -> None:
     log_file = cfg.logging.remove_junk_ligands_log_file
 
     # Setup logging to file
+    logger.remove()
+    logger.add(sys.stdout, format="{message}", level="INFO")
     logger.add(
         log_file,
         format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {message}",

@@ -12,9 +12,11 @@ from cleanup.remove_dna_rna import remove_dna_rna_from_directory
 from cleanup.remove_empty_structures import remove_unused_pdb_files
 from cleanup.remove_junk_ligands import remove_junk_ligands_from_directory
 from cleanup.remove_water import remove_water_from_directory
+from cleanup.remove_multiple_models import remove_multiple_models_from_directory
+
 from extraction.convert_pdb_to_smiles_sdf import convert_pdb_to_smiles_sdf
 from extraction.parse_dict import extract_and_save_complexes_with_ligands
-
+from pdb_manipulations.split_bioml import bioml_split
 
 def test_run_pipeline():
     with initialize(config_path="../config", version_base=None):
@@ -42,6 +44,7 @@ def test_run_pipeline():
 
         test_cfg = cfg.copy()
         test_cfg.paths.processed_dir = str(processed_dir)
+        test_cfg.paths.bioml_dir = str(temp_path / "bioml")
         test_cfg.output_files.complexes_json = str(temp_path / "complexes.json")
         test_cfg.output_files.grouped_complexes_json = str(
             temp_path / "grouped_complexes.json"
@@ -61,7 +64,6 @@ def test_run_pipeline():
 
         logger.info(f"Running tests in temporary directory: {processed_dir}")
 
-        # Проверка наличия PDB файлов в директории
         pdb_files = list(processed_dir.glob("*.pdb"))
         logger.info(f"PDB files found: {len(pdb_files)}")
         if not pdb_files:
@@ -69,6 +71,9 @@ def test_run_pipeline():
 
         remove_dna_rna_from_directory(
             input_dir=processed_dir, log_file=cfg.logging.dna_rna_removal_log_file
+        )
+        remove_multiple_models_from_directory(
+            input_dir=processed_dir, log_file=cfg.logging.multiple_models_removal_log_file
         )
         remove_water_from_directory(
             input_dir=processed_dir, log_file=cfg.logging.water_removal_log_file
@@ -82,17 +87,19 @@ def test_run_pipeline():
         extract_and_save_complexes_with_ligands(test_cfg)
         filter_ligands(test_cfg)
         remove_unused_pdb_files(test_cfg)
+        bioml_split(test_cfg)
 
-        # send_email_notification(new_structures="test",email_user=cfg.email.user,email_password=cfg.email.password,receiver_email=cfg.email.recipient,log_file=cfg.logging.email_log_file)
-
-        logger.info("mail notification sent")
-        logger.info(f"Test pipeline completed successfully in {temp_path}")
+        logger.info("Test pipeline completed successfully")
 
         processed_path = Path("./lpce/tests/processed")
-
         if processed_path.exists():
             shutil.rmtree(processed_path)
         shutil.copytree(processed_dir, processed_path, dirs_exist_ok=True)
+
+        bioml_path = Path("./lpce/tests/bioml")
+        if bioml_path.exists():
+            shutil.rmtree(bioml_path)
+        shutil.copytree(test_cfg.paths.bioml_dir, bioml_path, dirs_exist_ok=True)
 
 
 if __name__ == "__main__":

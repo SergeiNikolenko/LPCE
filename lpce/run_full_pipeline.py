@@ -1,18 +1,22 @@
 import shutil
 import sys
 from pathlib import Path
+from hydra import compose, initialize
+from loguru import logger
 
 from cleanup.filter_ligands import filter_ligands
 from cleanup.remove_dna_rna import remove_dna_rna_from_directory
 from cleanup.remove_empty_structures import remove_unused_pdb_files
 from cleanup.remove_junk_ligands import remove_junk_ligands_from_directory
 from cleanup.remove_water import remove_water_from_directory
+from cleanup.remove_multiple_models import remove_multiple_models_from_directory
+
 from extraction.convert_pdb_to_smiles_sdf import convert_pdb_to_smiles_sdf
 from extraction.decompress_files import decompress_pdb_files
 from extraction.extract_complexes import extract_complexes
 from extraction.parse_dict import extract_and_save_complexes_with_ligands
-from hydra import compose, initialize
-from loguru import logger
+from pdb_manipulations.split_bioml import bioml_split
+
 from utils.send_email import send_email_notification
 
 
@@ -47,6 +51,9 @@ def main():
     remove_dna_rna_from_directory(
         input_dir=processed_dir, log_file=cfg.logging.dna_rna_removal_log_file
     )
+    remove_multiple_models_from_directory(
+        input_dir=processed_dir, log_file=cfg.logging.multiple_models_removal_log_file
+    )
     remove_water_from_directory(
         input_dir=processed_dir, log_file=cfg.logging.water_removal_log_file
     )
@@ -59,6 +66,7 @@ def main():
     extract_and_save_complexes_with_ligands(cfg)
     filter_ligands(cfg)
     remove_unused_pdb_files(cfg)
+    bioml_split(cfg)
 
     send_email_notification(
         new_structures=new_structures,
