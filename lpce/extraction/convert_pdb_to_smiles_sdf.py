@@ -1,5 +1,4 @@
 import subprocess
-import sys
 import tempfile
 from pathlib import Path
 
@@ -115,7 +114,9 @@ def convert_pdb_to_smiles_sdf(cfg: object) -> None:
     total_files = len(pdb_files)
 
     logger.info("========== Converting PDB to SMILES and SDF ==========")
-    logger.info(f"Processing {total_files} PDB files from {Path(cfg.paths.processed_dir)}")
+    logger.info(
+        f"Processing {total_files} PDB files from {Path(cfg.paths.processed_dir)}"
+    )
 
     results = Parallel(n_jobs=-1)(
         delayed(process_pdb_file)(pdb_file, smiles_output_dir, sdf_output_dir)

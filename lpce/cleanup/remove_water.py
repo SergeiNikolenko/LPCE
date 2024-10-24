@@ -1,6 +1,6 @@
 import subprocess
-import sys
 from pathlib import Path
+
 from loguru import logger
 from tqdm import tqdm
 
@@ -29,7 +29,9 @@ def remove_water_from_directory(cfg: object) -> dict:
     processed_files = []
     failed_files = []
 
-    for pdb_file in tqdm(pdb_files, desc="Removing water", unit="file", total=total_files):
+    for pdb_file in tqdm(
+        pdb_files, desc="Removing water", unit="file", total=total_files
+    ):
         result = subprocess.run(
             [executable_path, str(pdb_file)],
             capture_output=True,
@@ -40,7 +42,9 @@ def remove_water_from_directory(cfg: object) -> dict:
         if result.returncode == 0:
             processed_files.append(str(pdb_file))
         else:
-            logger.error(f"Failed to remove water from {pdb_file}. Error: {result.stderr}")
+            logger.error(
+                f"Failed to remove water from {pdb_file}. Error: {result.stderr}"
+            )
             failed_files.append(str(pdb_file))
 
     logger.info(f"Total structures processed: {total_files}")
@@ -48,7 +52,4 @@ def remove_water_from_directory(cfg: object) -> dict:
     logger.info(f"Failed to process: {len(failed_files)}")
 
     # Returning the results as a dictionary
-    return {
-        'processed': processed_files,
-        'failed': failed_files
-    }
+    return {"processed": processed_files, "failed": failed_files}

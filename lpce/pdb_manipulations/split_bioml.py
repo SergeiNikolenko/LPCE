@@ -1,6 +1,5 @@
 import os
 import re
-import sys
 from pathlib import Path
 
 from Bio import Align
@@ -218,8 +217,8 @@ def process_pdb_file_with_inclusion_check(pdb_file, output_dir):
     """
     try:
         biomolecule_files = split_biomolecule_pdb(pdb_file, output_dir)
-        unique_files, duplicates, inclusions = remove_duplicate_and_included_biomolecules(
-            biomolecule_files
+        unique_files, duplicates, inclusions = (
+            remove_duplicate_and_included_biomolecules(biomolecule_files)
         )
         return unique_files, duplicates, inclusions
     except Exception as e:
@@ -253,7 +252,7 @@ def bioml_split(cfg) -> dict:
     all_unique_files = []
     all_duplicates = []
     all_inclusions = []
-    
+
     with Parallel(n_jobs=-1) as parallel:
         results = parallel(
             delayed(process_pdb_file_with_inclusion_check)(pdb_file, output_dir)
@@ -273,9 +272,8 @@ def bioml_split(cfg) -> dict:
     logger.info(f"Total inclusions found: {len(all_inclusions):,}")
     logger.info(f"Biomolecules remaining after filtering: {len(all_unique_files):,}")
 
-
     return {
-        'unique_files': all_unique_files,
-        'duplicates_removed': all_duplicates,
-        'inclusions': all_inclusions
+        "unique_files": all_unique_files,
+        "duplicates_removed": all_duplicates,
+        "inclusions": all_inclusions,
     }

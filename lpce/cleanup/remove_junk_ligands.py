@@ -2,19 +2,20 @@ import json
 import multiprocessing
 from collections import Counter
 from pathlib import Path
-from joblib import Parallel, delayed
-from tqdm import tqdm
-from loguru import logger
+
 import numpy as np
+from joblib import Parallel, delayed
+from loguru import logger
+from tqdm import tqdm
 
 
 def parse_atom_line(line: str) -> tuple:
     """
     Извлекает координаты и идентификатор лиганда из строки с атомом в PDB файле.
-    
+
     Args:
         line (str): Строка из PDB файла, описывающая атом.
-    
+
     Returns:
         tuple: Кортеж с идентификатором лиганда и координатами атома (x, y, z).
     """
@@ -28,11 +29,11 @@ def parse_atom_line(line: str) -> tuple:
 def remove_junk_ligands_from_file(input_file_path: Path, junk_ligands: set) -> dict:
     """
     Удаляет мусорные лиганды из PDB файла, если в радиусе 3 Å нет других лигандов.
-    
+
     Args:
         input_file_path (Path): Путь к PDB файлу.
         junk_ligands (set): Набор идентификаторов мусорных лигандов.
-    
+
     Returns:
         dict: Словарь с количеством удаленных лигандов.
     """
@@ -90,18 +91,18 @@ def remove_junk_ligands_from_file(input_file_path: Path, junk_ligands: set) -> d
 def remove_junk_ligands_from_directory(cfg) -> dict:
     """
     Обрабатывает все PDB файлы в указанной директории и удаляет мусорные лиганды, если они не находятся рядом с другими лигандами.
-    
+
     Args:
         cfg (DictConfig): Конфигурация с путями к файлам и настройками логирования.
-    
+
     Returns:
         dict: Результаты обработки, включая количество удаленных лигандов и ошибок.
     """
     input_directory = Path(cfg.paths.processed_dir)
     junk_ligands_file = Path(cfg.output_files.trash_ligands_json)
-    
+
     logger.info("========== Removing Junk Ligands ==========")
-    
+
     # Загружаем список мусорных лигандов
     with open(junk_ligands_file) as file:
         junk_ligands = set(json.load(file))
@@ -116,13 +117,15 @@ def remove_junk_ligands_from_directory(cfg) -> dict:
     # Параллельная обработка файлов
     results = Parallel(n_jobs=num_cores)(
         delayed(remove_junk_ligands_from_file)(pdb_file, junk_ligands)
-        for pdb_file in tqdm(pdb_files, desc="Removing junk ligands", unit="file", total=total_files)
+        for pdb_file in tqdm(
+            pdb_files, desc="Removing junk ligands", unit="file", total=total_files
+        )
     )
 
     # Суммируем результаты
     total_ligand_counts = Counter()
     failed_files = []
-    
+
     for i, result in enumerate(results):
         if isinstance(result, dict) and "error" not in result:
             total_ligand_counts.update(result)
@@ -135,11 +138,11 @@ def remove_junk_ligands_from_directory(cfg) -> dict:
     logger.info(f"Successfully processed: {successful_files}")
     logger.info(f"Failed to process: {len(failed_files)}")
     logger.info(f"Total ligands removed: {sum(total_ligand_counts.values())}")
-    
+
     return {
-        'total_files': total_files,
-        'successful_files': successful_files,
-        'failed_files': failed_files,
-        'total_ligands_removed': sum(total_ligand_counts.values()),
-        'ligands_removed_per_type': dict(total_ligand_counts)
+        "total_files": total_files,
+        "successful_files": successful_files,
+        "failed_files": failed_files,
+        "total_ligands_removed": sum(total_ligand_counts.values()),
+        "ligands_removed_per_type": dict(total_ligand_counts),
     }

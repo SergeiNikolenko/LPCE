@@ -1,5 +1,6 @@
 import json
 from pathlib import Path
+
 from loguru import logger
 
 
@@ -11,7 +12,7 @@ def filter_ligands(cfg):
         cfg (DictConfig): Configuration object containing paths and log file locations.
 
     Returns:
-        dict: A summary of the filtering process, including counts of analyzed proteins, 
+        dict: A summary of the filtering process, including counts of analyzed proteins,
               ligands, ligands deleted, and remaining ligands.
     """
     input_complexes = Path(cfg.output_files.grouped_complexes_json)
@@ -72,11 +73,11 @@ def filter_ligands(cfg):
     logger.info(f"Ligands remaining after filtering: {remaining_ligands:,}")
 
     return {
-        'total_proteins_grouped': total_proteins_grouped,
-        'total_ligands_grouped': total_ligands_grouped,
-        'total_proteins_site_info': total_proteins_site_info,
-        'ligand_intersections': ligand_intersections,
-        'ligand_deletions': ligand_deletions,
-        'percent_deleted': percent_deleted,
-        'remaining_ligands': remaining_ligands
+        "total_proteins_grouped": total_proteins_grouped,
+        "total_ligands_grouped": total_ligands_grouped,
+        "total_proteins_site_info": total_proteins_site_info,
+        "ligand_intersections": ligand_intersections,
+        "ligand_deletions": ligand_deletions,
+        "percent_deleted": percent_deleted,
+        "remaining_ligands": remaining_ligands,
     }

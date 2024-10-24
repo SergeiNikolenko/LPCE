@@ -21,9 +21,7 @@ def send_email_notification(cfg):
     receiver_email = cfg.email.recipient
 
     subject = "PDB Extraction Job Completed"
-    body = (
-        f"The job has completed successfully. 0-test new structures were added."
-    )
+    body = f"The job has completed successfully. 0-test new structures were added."
 
     try:
         yag = yagmail.SMTP(email_user, email_password)

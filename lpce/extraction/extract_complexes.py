@@ -1,6 +1,5 @@
 import subprocess
 import sys
-import json
 from pathlib import Path
 
 from loguru import logger
@@ -19,6 +18,7 @@ def count_structures(directory: Path) -> int:
     """
     directory_path = Path(directory)
     return sum(1 for _ in directory_path.rglob("*.ent.gz"))
+
 
 def extract_complexes(cfg) -> dict:
     """
@@ -90,9 +90,15 @@ def extract_complexes(cfg) -> dict:
                 logger.info(f"Complexes successfully extracted and saved to {raw_dir}")
                 logger.info(f"Total structures: {final_count}")
                 logger.info(f"New structures added: {new_structures}")
-                return {"new_structures": new_structures, "total_structures": final_count, "status": "success"}
+                return {
+                    "new_structures": new_structures,
+                    "total_structures": final_count,
+                    "status": "success",
+                }
             else:
-                logger.error(f"Rsync finished with errors, return code: {process.returncode}")
+                logger.error(
+                    f"Rsync finished with errors, return code: {process.returncode}"
+                )
                 logger.error(process.stderr.read())
                 return {"new_structures": 0, "status": "error"}
 

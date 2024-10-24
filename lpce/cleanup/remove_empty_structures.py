@@ -1,5 +1,6 @@
 import json
 from pathlib import Path
+
 from loguru import logger
 
 
@@ -41,7 +42,4 @@ def remove_unused_pdb_files(cfg) -> dict:
     logger.info(f"PDB files removed: {len(removed_files):,}")
 
     # Возвращаем только списки оставшихся и удалённых файлов
-    return {
-        'kept_files': kept_files,
-        'removed_files': removed_files
-    }
+    return {"kept_files": kept_files, "removed_files": removed_files}

@@ -2,13 +2,15 @@ import shutil
 import sys
 import tempfile
 from pathlib import Path
-import json
 
 from hydra import compose, initialize
 from loguru import logger
 
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
+import warnings
+
+from Bio import BiopythonDeprecationWarning
 from cleanup.filter_ligands import filter_ligands
 from cleanup.remove_dna_rna import remove_dna_rna_from_directory
 from cleanup.remove_empty_structures import remove_unused_pdb_files
@@ -17,11 +19,8 @@ from cleanup.remove_multiple_models import remove_multiple_models_from_directory
 from cleanup.remove_water import remove_water_from_directory
 from extraction.convert_pdb_to_smiles_sdf import convert_pdb_to_smiles_sdf
 from extraction.parse_dict import extract_and_save_complexes_with_ligands
-from pdb_manipulations.split_bioml import bioml_split
 from pdb_manipulations.protein_ligand_separator import protein_ligand_separator
-
-import warnings
-from Bio import BiopythonDeprecationWarning
+from pdb_manipulations.split_bioml import bioml_split
 
 warnings.filterwarnings("ignore", category=BiopythonDeprecationWarning)
 
@@ -58,16 +57,18 @@ def test_run_pipeline():
         if not pdb_files:
             logger.warning("No PDB files found in the processed directory for testing.")
 
-        dna_rna_removal_results = remove_dna_rna_from_directory(test_cfg)
-        multiple_models_removal_results = remove_multiple_models_from_directory(test_cfg)
-        water_removal_results = remove_water_from_directory(test_cfg)
-        junk_ligands_removal_results = remove_junk_ligands_from_directory(test_cfg)
-        ligand_conversion_results = convert_pdb_to_smiles_sdf(test_cfg)
-        complexes_extraction_results = extract_and_save_complexes_with_ligands(test_cfg)
-        ligand_filter_results = filter_ligands(test_cfg)
-        pdb_cleanup_results = remove_unused_pdb_files(test_cfg)
-        bioml_split_results = bioml_split(test_cfg)
-        separator_results = protein_ligand_separator(test_cfg)
+        remove_dna_rna_from_directory(test_cfg)
+        multiple_models_removal_results = remove_multiple_models_from_directory(
+            test_cfg
+        )
+        remove_water_from_directory(test_cfg)
+        remove_junk_ligands_from_directory(test_cfg)
+        convert_pdb_to_smiles_sdf(test_cfg)
+        extract_and_save_complexes_with_ligands(test_cfg)
+        filter_ligands(test_cfg)
+        remove_unused_pdb_files(test_cfg)
+        bioml_split(test_cfg)
+        protein_ligand_separator(test_cfg)
 
         processed_path = Path("./lpce/tests/processed")
         if processed_path.exists():
@@ -82,8 +83,9 @@ def test_run_pipeline():
         separated_path = Path("./lpce/tests/separated")
         if separated_path.exists():
             shutil.rmtree(separated_path)
-        shutil.copytree(test_cfg.paths.separated_dir, separated_path, dirs_exist_ok=True)
-
+        shutil.copytree(
+            test_cfg.paths.separated_dir, separated_path, dirs_exist_ok=True
+        )
 
         logger.info("DONE! Test pipeline completed successfully")
 

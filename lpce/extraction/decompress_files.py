@@ -1,6 +1,7 @@
 import gzip
 import shutil
 from pathlib import Path
+
 from joblib import Parallel, delayed
 from loguru import logger
 from tqdm import tqdm
@@ -10,8 +11,8 @@ def decompress_file(input_file_path: Path, output_file_path: Path) -> str:
     if output_file_path.exists():
         return "File already exists"
     try:
-        with input_file_path.open('rb') as f_in:
-            with output_file_path.open('wb') as f_out:
+        with input_file_path.open("rb") as f_in:
+            with output_file_path.open("wb") as f_out:
                 shutil.copyfileobj(gzip.GzipFile(fileobj=f_in), f_out)
         return True
     except (EOFError, OSError) as e:
@@ -29,17 +30,20 @@ def decompress_pdb_files(cfg: object) -> None:
     output_dir.mkdir(parents=True, exist_ok=True)
 
     input_output_paths = [
-        (input_file, (output_dir / input_file.stem).with_suffix('.pdb'))
+        (input_file, (output_dir / input_file.stem).with_suffix(".pdb"))
         for input_file in Path(cfg.paths.raw_dir).rglob("*.ent.gz")
     ]
     total_files = len(input_output_paths)
-    
+
     logger.info(f"Total .ent.gz files to decompress: {total_files}")
-    
-    results = Parallel(n_jobs=-1, backend='threading')(
+
+    results = Parallel(n_jobs=-1, backend="threading")(
         delayed(decompress_file)(input_path, output_path)
         for input_path, output_path in tqdm(
-            input_output_paths, desc="Decompressing files", unit="file", total=total_files
+            input_output_paths,
+            desc="Decompressing files",
+            unit="file",
+            total=total_files,
         )
     )
 
