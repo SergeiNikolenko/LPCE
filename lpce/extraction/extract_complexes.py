@@ -1,5 +1,6 @@
 import subprocess
 import sys
+import json
 from pathlib import Path
 
 from loguru import logger
@@ -11,35 +12,32 @@ def count_structures(directory: Path) -> int:
     Counts the number of .ent.gz files in the specified directory.
 
     Args:
-        directory (Path): The directory to search for .ent.gz files.
+        directory (Path): Directory to search for .ent.gz files.
 
     Returns:
-        int: The number of .ent.gz files found.
+        int: Number of found .ent.gz files.
     """
     directory_path = Path(directory)
     return sum(1 for _ in directory_path.rglob("*.ent.gz"))
 
-
-def extract_complexes(
-    raw_dir: Path, rsync_port: int = 33444, rsync_host: str = "rsync.rcsb.org"
-) -> int:
+def extract_complexes(cfg) -> dict:
     """
-    Synchronizes PDB structures from the RCSB PDB FTP server to the local directory specified by RAW_DIR.
+    Synchronizes PDB structures from the RCSB PDB FTP server to the local directory specified by cfg.paths.raw_dir.
 
-    This function performs a dry-run to estimate the total number of files to be synced, then proceeds with the actual
-    synchronization using rsync. The function prints progress and statistics, including the number of new structures
-    added.
+    Args:
+        cfg: Configuration object containing paths and connection settings.
 
     Returns:
-        int: The number of new structures added during the sync process. Returns 0 if an error occurred.
+        dict: Dictionary with the number of new structures and total statistics.
     """
-    output_path = Path(raw_dir)
-    output_path.mkdir(parents=True, exist_ok=True)
-    logger.remove()
-    logger.add(sys.stdout, format="{message}", level="INFO")
+    raw_dir = Path(cfg.paths.raw_dir)
+    rsync_port = cfg.rsync.port
+    rsync_host = cfg.rsync.host
+
+    raw_dir.mkdir(parents=True, exist_ok=True)
     logger.info("========== Extracting Complexes ==========")
 
-    initial_count = count_structures(output_path)
+    initial_count = count_structures(raw_dir)
     logger.info(f"Initial count of structures: {initial_count}")
 
     rsync_command = [
@@ -47,11 +45,13 @@ def extract_complexes(
         "-rlPt",
         "--delete",
         f"--port={rsync_port}",
+        "--out-format='%n'",
         f"{rsync_host}::ftp_data/structures/divided/pdb/",
-        str(output_path),
+        str(raw_dir),
     ]
 
     try:
+        # Dry-run to estimate total number of files
         dry_run_command = rsync_command + ["--dry-run"]
         logger.info("Running dry-run to estimate total files...")
 
@@ -62,11 +62,13 @@ def extract_complexes(
 
         if dry_run_process.returncode != 0:
             logger.error(f"Dry-run failed with error: {dry_run_error}")
-            return 0
+            return {"new_structures": 0, "status": "error"}
 
-        estimated_total_files = len(dry_run_output.strip().split("\n"))
+        file_list = [line for line in dry_run_output.strip().split("\n") if line]
+        estimated_total_files = len(file_list)
         logger.info(f"Estimated total files to sync: {estimated_total_files}")
 
+        # Run the actual rsync process with progress bar
         with tqdm(
             total=estimated_total_files,
             desc="Syncing files",
@@ -83,21 +85,17 @@ def extract_complexes(
             process.wait()
 
             if process.returncode == 0:
-                final_count = count_structures(output_path)
+                final_count = count_structures(raw_dir)
                 new_structures = final_count - initial_count
-                logger.info(
-                    f"Complexes successfully extracted and saved to {output_path}"
-                )
+                logger.info(f"Complexes successfully extracted and saved to {raw_dir}")
                 logger.info(f"Total structures: {final_count}")
                 logger.info(f"New structures added: {new_structures}")
-                return new_structures
+                return {"new_structures": new_structures, "total_structures": final_count, "status": "success"}
             else:
-                logger.error(
-                    f"rsync finished with errors, return code: {process.returncode}"
-                )
+                logger.error(f"Rsync finished with errors, return code: {process.returncode}")
                 logger.error(process.stderr.read())
-                return 0
+                return {"new_structures": 0, "status": "error"}
 
     except Exception as e:
         logger.error(f"Error during rsync: {e}")
-        raise e
+        return {"new_structures": 0, "status": "error"}

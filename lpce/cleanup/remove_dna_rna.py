@@ -1,38 +1,22 @@
 import os
-import sys
 from pathlib import Path
-
 import joblib
-from loguru import logger
 from tqdm import tqdm
 
 
 def contains_dna_rna_sequence(content: str) -> bool:
     """
-    Checks if the content of a PDB file contains DNA or RNA sequences in SEQRES or ATOM lines.
+    Checks if the content of a PDB file contains DNA or RNA sequences.
 
     Args:
         content (str): The content of the PDB file.
 
     Returns:
-        bool: True if the file contains DNA or RNA sequences, False otherwise.
+        bool: True if the file contains DNA/RNA sequences, otherwise False.
     """
     nucleotides = {
-        "A",
-        "T",
-        "G",
-        "C",
-        "U",
-        "DA",
-        "DT",
-        "DG",
-        "DC",
-        "DU",
-        "RA",
-        "RT",
-        "RG",
-        "RC",
-        "RU",
+        "A", "T", "G", "C", "U", "DA", "DT", "DG", "DC", "DU",
+        "RA", "RT", "RG", "RC", "RU"
     }
     seqres_lines = [line for line in content.splitlines() if line.startswith("SEQRES")]
     atom_lines = [line for line in content.splitlines() if line.startswith("ATOM")]
@@ -43,7 +27,7 @@ def contains_dna_rna_sequence(content: str) -> bool:
         if any(n in nucleotides for n in sequence):
             return True
 
-    # Check ATOM lines for specific nucleotide atoms
+    # Check ATOM lines for specific nucleotides
     for line in atom_lines:
         if line[17:22].strip() in nucleotides:
             return True
@@ -51,7 +35,7 @@ def contains_dna_rna_sequence(content: str) -> bool:
     return False
 
 
-def process_file(file: Path) -> bool:
+def process_file(file: Path) -> str:
     """
     Processes a single PDB file and removes it if it contains DNA or RNA sequences.
 
@@ -59,53 +43,47 @@ def process_file(file: Path) -> bool:
         file (Path): The path to the PDB file.
 
     Returns:
-        bool: True if the file is retained, False if it is removed.
+        str: 'removed' if the file was removed, or 'retained' if the file was kept.
     """
     try:
         with open(file) as f:
             content = f.read()
             if contains_dna_rna_sequence(content):
                 os.remove(file)
-                # logger.info(f"Removed file {file} containing DNA/RNA sequences.")
-                return False
-        return True
+                return 'removed'
+        return 'retained'
     except Exception as e:
-        logger.error(f"Error processing file {file}: {e}")
-        return False
+        # If an error occurs, the file is not removed
+        return 'error'
 
 
-def remove_dna_rna_from_directory(input_dir: Path, log_file: str) -> None:
+def remove_dna_rna_from_directory(cfg) -> dict:
     """
     Removes PDB files containing DNA or RNA sequences from the specified directory.
 
     Args:
-        input_dir (Path): The directory to scan for PDB files.
-        log_file (str): The path to the log file where the process is logged.
+        cfg (object): Configuration containing directory paths.
 
     Returns:
-        None
+        dict: A dictionary with results: lists of removed and retained files.
     """
-    logger.remove()
-    logger.add(sys.stdout, format="{message}", level="INFO")
-    logger.add(
-        log_file,
-        format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {message}",
-        level="INFO",
-    )
-    logger.info("========== Removing DNA/RNA ==========")
+    input_dir = Path(cfg.paths.processed_dir)
     files = list(input_dir.glob("*.pdb"))
     total_files = len(files)
 
-    logger.info(f"Total PDB files to analyze: {total_files}")
-
+    # Use parallel processing for files
     results = joblib.Parallel(n_jobs=-1)(
-        joblib.delayed(process_file)(file)
-        for file in tqdm(files, desc="Removing DNA/RNA")
+        joblib.delayed(process_file)(file) for file in tqdm(files, desc="Removing DNA/RNA")
     )
-    retained_files = sum(results)
 
-    remaining_percentage = (retained_files / total_files) * 100
+    # Form lists of removed and retained files
+    retained_files = [str(files[i].name) for i, result in enumerate(results) if result == 'retained']
+    removed_files = [str(files[i].name) for i, result in enumerate(results) if result == 'removed']
+    errors = [str(files[i].name) for i, result in enumerate(results) if result == 'error']
 
-    logger.info(f"Total files analyzed: {total_files:,}")
-    logger.info(f"Files retained after removal: {retained_files:,}")
-    logger.info(f"Percentage of files retained: {remaining_percentage:.2f}%")
+    # Return results
+    return {
+        'retained': retained_files,
+        'removed': removed_files,
+        'errors': errors
+    }

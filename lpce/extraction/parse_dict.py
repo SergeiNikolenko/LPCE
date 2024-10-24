@@ -304,13 +304,6 @@ def extract_and_save_complexes_with_ligands(cfg) -> None:
     Args:
         cfg: Hydra configuration object with paths and logging settings.
     """
-    logger.remove()
-    logger.add(sys.stdout, format="{message}", level="INFO")
-    logger.add(
-        cfg.logging.complexes_log_file,
-        format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {message}",
-        level="INFO",
-    )
     logger.info("========== Extracting and Saving Complexes with Ligands ==========")
 
     pdb_directory = Path(cfg.paths.processed_dir)

@@ -1,8 +1,9 @@
 paths:
-  raw_dir: /mnt/ligandpro/db/lpce/raw/pdb
-  processed_dir: /mnt/ligandpro/db/lpce/processed
-  ligands_dir: /mnt/ligandpro/db/lpce/ligands
-  bioml_dir: /mnt/ligandpro/db/lpce/bioml
+  raw_dir: /mnt/ligandpro/db/LPCE/raw/pdb
+  processed_dir: /mnt/ligandpro/db/LPCE/processed
+  ligands_dir: /mnt/ligandpro/db/LPCE/ligands
+  bioml_dir: /mnt/ligandpro/db/LPCE/bioml
+  separated_dir: /mnt/ligandpro/db/LPCE/separated
 
 output_files:
   complexes_json: data/complexes.json
@@ -24,15 +25,10 @@ rsync:
 
 logging:
   log_file: logs/logfile.log
-  decompression_log_file: logs/decompression_logfile.log
-  dna_rna_removal_log_file: logs/dna_rna_removal_logfile.log
-  water_removal_log_file: logs/water_removal_logfile.log
-  remove_junk_ligands_log_file: logs/remove_junk_ligands_logfile.log
-  complexes_log_file: logs/complexes_logfile.log
-  ligand_filter_log_file: logs/ligand_filter_logfile.log
-  separate_complexes_log_file: logs/separate_complexes_logfile.log
-  email_log_file: logs/email_logfile.log
-  ligand_conversion_log_file: logs/ligand_conversion_logfile.log
-  pdb_cleanup_log_file: logs/pdb_cleanup_log_file.log
-  bioml_split_log_file: logs/bioml_split_log_file.log
-  multiple_models_removal_log_file: logs/multiple_models_removal_log_file.log
+
+
+separator_params:
+  interact_distance: 4.5       # Distance to consider an atom as interacting.
+  ligand_ligand_distance: 4  # Distance to consider ligands as part of the same group.
+  rmsd_threshold: 2.0          # RMSD threshold to consider structures as similar.
+  identity_threshold: 0.98     # Identity threshold to consider structures as similar.

@@ -5,7 +5,10 @@ all: run_pipeline
 
 run_pipeline:
 	clear
-	rm -rf /mnt/ligandpro/db/LPCE/*
+	rm -rf /mnt/ligandpro/db/LPCE/processed
+	rm -rf /mnt/ligandpro/db/LPCE/ligands
+	rm -rf /mnt/ligandpro/db/LPCE/bioml
+	rm -rf logs
 	python lpce/run_full_pipeline.py
 
 test:

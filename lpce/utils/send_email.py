@@ -2,13 +2,7 @@ import yagmail
 from loguru import logger
 
 
-def send_email_notification(
-    new_structures: int,
-    email_user: str,
-    email_password: str,
-    receiver_email: str,
-    log_file: str,
-):
+def send_email_notification(cfg):
     """
     Send an email notification after the PDB extraction job completes.
 
@@ -22,12 +16,13 @@ def send_email_notification(
     Returns:
         None
     """
-    # Add a log file for the email notification process
-    logger.add(log_file, format="{time} | {level} | {message}", level="INFO")
+    email_user = cfg.email.user
+    email_password = cfg.email.password
+    receiver_email = cfg.email.recipient
 
     subject = "PDB Extraction Job Completed"
     body = (
-        f"The job has completed successfully. {new_structures} new ligands were added."
+        f"The job has completed successfully. 0-test new structures were added."
     )
 
     try:

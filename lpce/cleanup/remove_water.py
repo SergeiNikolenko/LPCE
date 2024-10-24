@@ -1,44 +1,35 @@
 import subprocess
 import sys
 from pathlib import Path
-
 from loguru import logger
 from tqdm import tqdm
 
 
-def remove_water_from_directory(input_dir: Path, log_file: str) -> None:
+def remove_water_from_directory(cfg: object) -> dict:
     """
     Processes all PDB files in the specified directory, removing water molecules from each file.
 
     This function uses a compiled C program (`remove_water`) to perform the water removal.
-    Logs the process and statistics into the specified log file.
+    Logs the process and statistics using the existing logger.
 
     Args:
-        processed_dir (Path): The directory containing the PDB files to process.
-        log_file (str): Path to the log file for logging the water removal process.
+        input_dir (Path): The directory containing the PDB files to process.
 
     Returns:
-        None
+        dict: Dictionary with lists of successfully processed and failed files.
     """
-    # Add a separate log file for the water removal process
-    logger.remove()
-    logger.add(sys.stdout, format="{message}", level="INFO")
-    logger.add(
-        log_file,
-        format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {message}",
-        level="INFO",
-    )
-    logger.info("========== Removing Water ==========")
-    pdb_files = list(input_dir.rglob("*.pdb"))
+    logger.info("========== Removing Water from PDB files ==========")
+    pdb_files = list(Path(cfg.paths.processed_dir).rglob("*.pdb"))
     total_files = len(pdb_files)
 
-    logger.info(f"Found {total_files} PDB files in {input_dir}")
+    logger.info(f"Found {total_files} PDB files in {Path(cfg.paths.processed_dir)}")
 
     executable_path = "lpce/cleanup/remove_water"
 
-    for pdb_file in tqdm(
-        pdb_files, desc="Removing water", unit="file", total=total_files
-    ):
+    processed_files = []
+    failed_files = []
+
+    for pdb_file in tqdm(pdb_files, desc="Removing water", unit="file", total=total_files):
         result = subprocess.run(
             [executable_path, str(pdb_file)],
             capture_output=True,
@@ -47,10 +38,17 @@ def remove_water_from_directory(input_dir: Path, log_file: str) -> None:
         )
 
         if result.returncode == 0:
-            pass
+            processed_files.append(str(pdb_file))
         else:
-            logger.error(
-                f"Failed to remove water from {pdb_file}. Error: {result.stderr}"
-            )
+            logger.error(f"Failed to remove water from {pdb_file}. Error: {result.stderr}")
+            failed_files.append(str(pdb_file))
 
     logger.info(f"Total structures processed: {total_files}")
+    logger.info(f"Successfully processed: {len(processed_files)}")
+    logger.info(f"Failed to process: {len(failed_files)}")
+
+    # Returning the results as a dictionary
+    return {
+        'processed': processed_files,
+        'failed': failed_files
+    }

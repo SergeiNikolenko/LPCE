@@ -19,8 +19,11 @@ dependencies:
   - pandarallel
   - numpy
   - pre-commit
+  - MDAnalysis
+  - mdakit-sasa
   - pip:
     - python-dotenv
     - tqdm
     - pytest
+    
     - chembl_structure_pipeline

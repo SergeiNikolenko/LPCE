@@ -94,36 +94,28 @@ def process_pdb_file(pdb_file_path, smiles_output_dir, sdf_output_dir):
         return 0
 
 
-def convert_pdb_to_smiles_sdf(input_dir: Path, output_dir: Path, log_file: str) -> None:
+def convert_pdb_to_smiles_sdf(cfg: object) -> None:
     """
     Processes all PDB files in the input directory by extracting ligands and converting
     them to SMILES and SDF formats. The results are saved in the output directories.
 
     Args:
-        input_dir (Path): Directory containing the PDB files.
-        output_dir (Path): Directory to save SMILES and SDF files.
+        cfg (object): Configuration object containing paths and other parameters.
 
     Returns:
         None
     """
-    smiles_output_dir = output_dir / "smiles"
-    sdf_output_dir = output_dir / "sdf"
+    smiles_output_dir = Path(cfg.paths.ligands_dir) / "smiles"
+    sdf_output_dir = Path(cfg.paths.ligands_dir) / "sdf"
 
     smiles_output_dir.mkdir(parents=True, exist_ok=True)
     sdf_output_dir.mkdir(parents=True, exist_ok=True)
 
-    pdb_files = list(input_dir.glob("*.pdb"))
+    pdb_files = list(Path(cfg.paths.processed_dir).glob("*.pdb"))
     total_files = len(pdb_files)
 
-    logger.remove()
-    logger.add(sys.stdout, format="{message}", level="INFO")
-    logger.add(
-        log_file,
-        format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {message}",
-        level="INFO",
-    )
     logger.info("========== Converting PDB to SMILES and SDF ==========")
-    logger.info(f"Processing {total_files} PDB files from {input_dir}")
+    logger.info(f"Processing {total_files} PDB files from {Path(cfg.paths.processed_dir)}")
 
     results = Parallel(n_jobs=-1)(
         delayed(process_pdb_file)(pdb_file, smiles_output_dir, sdf_output_dir)

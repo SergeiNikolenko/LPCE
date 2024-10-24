@@ -51,7 +51,7 @@ def process_file(file: Path) -> bool:
     return True
 
 
-def remove_multiple_models_from_directory(input_dir: Path, log_file: str) -> None:
+def remove_multiple_models_from_directory(cfg: object) -> None:
     """
     Removes PDB files containing multiple models from the specified directory.
 
@@ -62,13 +62,8 @@ def remove_multiple_models_from_directory(input_dir: Path, log_file: str) -> Non
     Returns:
         None
     """
-    logger.remove()
-    logger.add(sys.stdout, format="{message}", level="INFO")
-    logger.add(
-        log_file,
-        format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {message}",
-        level="INFO",
-    )
+    input_dir = Path(cfg.paths.processed_dir)
+
     logger.info("========== Removing PDB files with multiple models ==========")
     files = list(input_dir.glob("*.pdb"))
     total_files = len(files)
@@ -77,7 +72,7 @@ def remove_multiple_models_from_directory(input_dir: Path, log_file: str) -> Non
 
     results = joblib.Parallel(n_jobs=-1)(
         joblib.delayed(process_file)(file)
-        for file in tqdm(files, desc="Processing PDB files")
+        for file in tqdm(files, desc="Removing multiple models")
     )
     retained_files = sum(results)
     removed_files = total_files - retained_files

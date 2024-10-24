@@ -208,7 +208,7 @@ def remove_duplicate_and_included_biomolecules(biomolecule_files):
             unique_files.append(file1)
     for dup_file in duplicates + inclusions:
         os.remove(dup_file)
-    return unique_files, inclusions
+    return unique_files, duplicates, inclusions
 
 
 def process_pdb_file_with_inclusion_check(pdb_file, output_dir):
@@ -218,34 +218,29 @@ def process_pdb_file_with_inclusion_check(pdb_file, output_dir):
     """
     try:
         biomolecule_files = split_biomolecule_pdb(pdb_file, output_dir)
-        unique_files, inclusions = remove_duplicate_and_included_biomolecules(
+        unique_files, duplicates, inclusions = remove_duplicate_and_included_biomolecules(
             biomolecule_files
         )
-        biomolecules_created = len(biomolecule_files)
-        duplicates_removed = biomolecules_created - len(unique_files) - len(inclusions)
-        return biomolecules_created, duplicates_removed, len(inclusions)
+        return unique_files, duplicates, inclusions
     except Exception as e:
         logger.error(f"Error processing {pdb_file}: {e}")
-        return 0, 0, 0
+        return [], [], []
 
 
-def bioml_split(cfg):
+def bioml_split(cfg) -> dict:
     """
     Splits PDB files into biomolecules based on REMARK 350 information,
     removes duplicate biomolecules, and saves them into output_directory.
+    Returns a dictionary containing lists of created, removed (duplicates), and included files.
+
+    Args:
+        cfg (DictConfig): Configuration object containing paths and logging settings.
+
+    Returns:
+        dict: Contains lists of unique files (kept), duplicates removed, and inclusions.
     """
     input_dir = Path(cfg.paths.processed_dir)
     output_dir = Path(cfg.paths.bioml_dir)
-    log_file = cfg.logging.bioml_split_log_file
-
-    logger.remove()  # Remove default handler
-
-    logger.add(sys.stdout, format="{message}", level="INFO")
-    logger.add(
-        log_file,
-        format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {message}",
-        level="INFO",
-    )
 
     pdb_files = get_pdb_files(input_dir)
     total_files = len(pdb_files)
@@ -255,24 +250,32 @@ def bioml_split(cfg):
     os.makedirs(output_dir, exist_ok=True)
 
     # Process files in parallel
-    results = []
+    all_unique_files = []
+    all_duplicates = []
+    all_inclusions = []
+    
     with Parallel(n_jobs=-1) as parallel:
         results = parallel(
             delayed(process_pdb_file_with_inclusion_check)(pdb_file, output_dir)
             for pdb_file in tqdm(pdb_files, desc="Processing PDB files")
         )
 
-    # Summarize results
-    total_biomolecules_made = sum(biomol[0] for biomol in results)
-    total_duplicates_removed = sum(biomol[1] for biomol in results)
-    total_inclusions_found = sum(biomol[2] for biomol in results)
-    total_biomolecules_left = (
-        total_biomolecules_made - total_duplicates_removed - total_inclusions_found
-    )
+    # Collect results
+    for unique_files, duplicates, inclusions in results:
+        all_unique_files.extend(unique_files)
+        all_duplicates.extend(duplicates)
+        all_inclusions.extend(inclusions)
 
     logger.info("========== Split Bioml ==========")
     logger.info(f"Total PDB files processed: {total_files}")
-    logger.info(f"Total biomolecules created: {total_biomolecules_made}")
-    logger.info(f"Total duplicates removed: {total_duplicates_removed}")
-    logger.info(f"Total inclusions found: {total_inclusions_found}")
-    logger.info(f"Biomolecules remaining after filtering: {total_biomolecules_left}")
+    logger.info(f"Total biomolecules created: {len(all_unique_files):,}")
+    logger.info(f"Total duplicates removed: {len(all_duplicates):,}")
+    logger.info(f"Total inclusions found: {len(all_inclusions):,}")
+    logger.info(f"Biomolecules remaining after filtering: {len(all_unique_files):,}")
+
+
+    return {
+        'unique_files': all_unique_files,
+        'duplicates_removed': all_duplicates,
+        'inclusions': all_inclusions
+    }
