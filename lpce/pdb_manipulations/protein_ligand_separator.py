@@ -44,31 +44,6 @@ class LigandSelect(Select):
         else:
             return False
 
-
-def calculate_buried_fraction(
-    structure, ligand_residues, pocket_info, threshold=0.5, radius=5.0
-):
-    ligand_atoms = [atom for residue in ligand_residues for atom in residue.get_atoms()]
-    protein_atoms = [
-        atom
-        for atom in structure.get_atoms()
-        if atom.get_parent().get_parent().id in pocket_info["interacting_chains"]
-        and atom.get_parent().id[0] == " "
-    ]
-
-    ligand_coords = np.array([atom.get_coord() for atom in ligand_atoms])
-    protein_coords = np.array([atom.get_coord() for atom in protein_atoms])
-
-    protein_tree = cKDTree(protein_coords)
-    neighbors = protein_tree.query_ball_point(ligand_coords, r=radius)
-
-    buried_atoms = sum(len(neigh) > 0 for neigh in neighbors)
-    buried_fraction = buried_atoms / len(ligand_atoms)
-
-    logger.info(f"Buried fraction: {buried_fraction:.2f} (threshold: {threshold})")
-    return buried_fraction > threshold
-
-
 def calculate_aligned_rmsd(
     structure1_file, structure2_file, input_file_path, identity_threshold=0.9
 ):
@@ -320,9 +295,9 @@ def save_pocket_structure(
     select = LigandSelect(ligands, interacting_chains)
     ligand_names = "_".join(sorted({ligand.get_resname() for ligand in ligands}))
     chains_str = "_".join(sorted(interacting_chains))
-    output_file = (
-        output_dir / f"{input_filename}_{ligand_names}_chains_{chains_str}.pdb"
-    )
+
+    # Добавляем суффикс `_processed` к имени файла
+    output_file = output_dir / f"{input_filename}_{ligand_names}_chains_{chains_str}_processed.pdb"
 
     old_atom_serials = {
         atom.get_serial_number(): atom
@@ -352,12 +327,12 @@ def save_pocket_structure(
             {
                 "output_file": output_file,
                 "temp_file": temp_structure_file,
-                "skipped_similar": True,  # Устанавливаем флаг
+                "skipped_similar": True,
             }
         )
-        return  # Прекращаем сохранение, если нашли похожую структуру
+        return
 
-    # Если структура уникальна, продолжаем сохранение
+    # Сохраняем структуру, если она уникальна
     parser = PDBParser(QUIET=True)
     new_structure = parser.get_structure("new_struct", temp_structure_file)
 
@@ -399,18 +374,18 @@ def save_pocket_structure(
             lines = lines[:-1]
         f_out.seek(0)
         f_out.writelines(lines)
-        # f_out.writelines(filtered_conect_lines)  # модуль CONECT
         f_out.write("END\n")
 
     saved_structures.append(
         {
             "output_file": output_file,
             "temp_file": temp_structure_file,
-            "skipped_similar": False,  # Флаг, если структура была сохранена
+            "skipped_similar": False,
         }
     )
 
     logger.debug(f"Saved pocket structure to file: {output_file}")
+
 
 
 def load_original_lines(file_path):
@@ -505,7 +480,7 @@ def get_pdb_files(input_dir):
 
 
 def protein_ligand_separator(cfg):
-    input_dir = Path(cfg.paths.processed_dir)
+    input_dir = Path(cfg.paths.bioml_dir)
     output_dir = Path(cfg.paths.separated_dir)
 
     interact_distance = cfg.separator_params.interact_distance

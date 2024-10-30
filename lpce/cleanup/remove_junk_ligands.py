@@ -43,7 +43,7 @@ def remove_junk_ligands_from_file(input_file_path: Path, junk_ligands: set) -> d
         ligands_to_remove = set()
         temp_file_path = input_file_path.with_suffix(".tmp")
         changes_made = False
-        threshold = 3.0
+        threshold = 4.0
 
         # Читаем файл и собираем атомы
         with open(input_file_path) as f_in:

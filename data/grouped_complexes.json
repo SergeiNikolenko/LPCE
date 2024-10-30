@@ -142,12 +142,20 @@
             {
                 "ligand": "HEM",
                 "residue": 150
+            },
+            {
+                "ligand": "OXY",
+                "residue": 151
             }
         ],
         "B": [
             {
                 "ligand": "HEM",
                 "residue": 150
+            },
+            {
+                "ligand": "OXY",
+                "residue": 151
             }
         ]
     },
@@ -1322,6 +1330,14 @@
             {
                 "ligand": "FE",
                 "residue": 691
+            },
+            {
+                "ligand": "CO3",
+                "residue": 692
+            },
+            {
+                "ligand": "CO3",
+                "residue": 693
             }
         ]
     },
@@ -1374,24 +1390,40 @@
             {
                 "ligand": "HEM",
                 "residue": 142
+            },
+            {
+                "ligand": "CMO",
+                "residue": 143
             }
         ],
         "E": [
             {
                 "ligand": "HEM",
                 "residue": 147
+            },
+            {
+                "ligand": "CMO",
+                "residue": 148
             }
         ],
         "C": [
             {
                 "ligand": "HEM",
                 "residue": 142
+            },
+            {
+                "ligand": "CMO",
+                "residue": 143
             }
         ],
         "F": [
             {
                 "ligand": "HEM",
                 "residue": 147
+            },
+            {
+                "ligand": "CMO",
+                "residue": 148
             }
         ]
     },
@@ -1540,6 +1572,10 @@
             {
                 "ligand": "HEM",
                 "residue": 154
+            },
+            {
+                "ligand": "CMO",
+                "residue": 155
             }
         ]
     },
@@ -2612,6 +2648,14 @@
             {
                 "ligand": "FE",
                 "residue": 694
+            },
+            {
+                "ligand": "CO3",
+                "residue": 695
+            },
+            {
+                "ligand": "CO3",
+                "residue": 696
             }
         ]
     },
@@ -2667,6 +2711,10 @@
     },
     "1a8e": {
         "A": [
+            {
+                "ligand": "CO3",
+                "residue": 338
+            },
             {
                 "ligand": "FE",
                 "residue": 339
@@ -2790,11 +2838,19 @@
     "1bhn": {
         "A": [
             {
+                "ligand": "35G",
+                "residue": 160
+            },
+            {
                 "ligand": "GDP",
                 "residue": 161
             }
         ],
         "B": [
+            {
+                "ligand": "35G",
+                "residue": 160
+            },
             {
                 "ligand": "GDP",
                 "residue": 161
@@ -2802,11 +2858,19 @@
         ],
         "C": [
             {
+                "ligand": "35G",
+                "residue": 160
+            },
+            {
                 "ligand": "GDP",
                 "residue": 161
             }
         ],
         "D": [
+            {
+                "ligand": "35G",
+                "residue": 160
+            },
             {
                 "ligand": "GDP",
                 "residue": 161
@@ -2814,11 +2878,19 @@
         ],
         "E": [
             {
+                "ligand": "35G",
+                "residue": 160
+            },
+            {
                 "ligand": "GDP",
                 "residue": 161
             }
         ],
         "F": [
+            {
+                "ligand": "35G",
+                "residue": 160
+            },
             {
                 "ligand": "GDP",
                 "residue": 161
@@ -3069,6 +3141,10 @@
     },
     "1bje": {
         "A": [
+            {
+                "ligand": "AZI",
+                "residue": 156
+            },
             {
                 "ligand": "HEM",
                 "residue": 154
@@ -3496,11 +3572,19 @@
     "1ahz": {
         "A": [
             {
+                "ligand": "CL",
+                "residue": 601
+            },
+            {
                 "ligand": "FAD",
                 "residue": 600
             }
         ],
         "B": [
+            {
+                "ligand": "CL",
+                "residue": 601
+            },
             {
                 "ligand": "FAD",
                 "residue": 600

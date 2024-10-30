@@ -1273,6 +1273,14 @@
             {
                 "ligand": "FE",
                 "residue": 691
+            },
+            {
+                "ligand": "CO3",
+                "residue": 692
+            },
+            {
+                "ligand": "CO3",
+                "residue": 693
             }
         ]
     },
@@ -2430,6 +2438,14 @@
             {
                 "ligand": "FE",
                 "residue": 694
+            },
+            {
+                "ligand": "CO3",
+                "residue": 695
+            },
+            {
+                "ligand": "CO3",
+                "residue": 696
             }
         ]
     },
@@ -2485,6 +2501,10 @@
     },
     "1a8e": {
         "A": [
+            {
+                "ligand": "CO3",
+                "residue": 338
+            },
             {
                 "ligand": "FE",
                 "residue": 339

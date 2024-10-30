@@ -16,6 +16,10 @@ from hydra import compose, initialize
 from loguru import logger
 from pdb_manipulations.protein_ligand_separator import protein_ligand_separator
 from pdb_manipulations.split_bioml import bioml_split
+from pdb_manipulations.foldseek import find_duplicates_foldseek
+from pdb_manipulations.remove_similar_structures import remove_similar_structures
+
+from utils.clean_names import clean_multiple_paths
 from utils.send_email import send_email_notification
 
 
@@ -37,20 +41,22 @@ def main():
 
     logger.debug(f"Config: {cfg}")
 
-    extract_complexes(cfg)
-    (decompress_pdb_files(cfg),)
-    remove_dna_rna_from_directory(cfg)
-    remove_multiple_models_from_directory(cfg)
-    remove_water_from_directory(cfg)
-    remove_junk_ligands_from_directory(cfg)
-    convert_pdb_to_smiles_sdf(cfg)
-    extract_and_save_complexes_with_ligands(cfg)
-    filter_ligands(cfg)
-    remove_unused_pdb_files(cfg)
-    bioml_split(cfg)
-    protein_ligand_separator(cfg)
-    send_email_notification(cfg)
-
+    _ = extract_complexes(cfg)
+    _ = decompress_pdb_files(cfg)
+    _ = remove_dna_rna_from_directory(cfg)
+    _ = remove_multiple_models_from_directory(cfg)
+    _ = remove_water_from_directory(cfg)
+    _ = remove_junk_ligands_from_directory(cfg)
+    _ = convert_pdb_to_smiles_sdf(cfg)
+    _ = extract_and_save_complexes_with_ligands(cfg)
+    _ = filter_ligands(cfg)
+    _ = remove_unused_pdb_files(cfg)
+    _ = bioml_split(cfg)
+    _ = protein_ligand_separator(cfg)
+    _ = send_email_notification(cfg)
+    _ = clean_multiple_paths(cfg)
+    _ = find_duplicates_foldseek(cfg)
+    _ = remove_similar_structures(cfg)
 
 if __name__ == "__main__":
     main()
