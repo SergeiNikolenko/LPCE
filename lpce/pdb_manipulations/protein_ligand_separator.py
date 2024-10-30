@@ -11,7 +11,6 @@ from Bio.PDB.PDBIO import PDBIO
 from Bio.SeqUtils import seq1
 from joblib import Parallel, delayed
 from loguru import logger
-from scipy.spatial import cKDTree
 from tqdm import tqdm
 
 warnings.filterwarnings(
@@ -43,6 +42,7 @@ class LigandSelect(Select):
             return True
         else:
             return False
+
 
 def calculate_aligned_rmsd(
     structure1_file, structure2_file, input_file_path, identity_threshold=0.9
@@ -297,7 +297,10 @@ def save_pocket_structure(
     chains_str = "_".join(sorted(interacting_chains))
 
     # Добавляем суффикс `_processed` к имени файла
-    output_file = output_dir / f"{input_filename}_{ligand_names}_chains_{chains_str}_processed.pdb"
+    output_file = (
+        output_dir
+        / f"{input_filename}_{ligand_names}_chains_{chains_str}_processed.pdb"
+    )
 
     old_atom_serials = {
         atom.get_serial_number(): atom
@@ -385,7 +388,6 @@ def save_pocket_structure(
     )
 
     logger.debug(f"Saved pocket structure to file: {output_file}")
-
 
 
 def load_original_lines(file_path):

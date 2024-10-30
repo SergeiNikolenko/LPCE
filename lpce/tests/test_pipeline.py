@@ -11,8 +11,6 @@ sys.path.append(str(Path(__file__).resolve().parent.parent))
 import warnings
 
 from Bio import BiopythonDeprecationWarning
-
-from utils.clean_names import clean_multiple_paths
 from cleanup.filter_ligands import filter_ligands
 from cleanup.remove_dna_rna import remove_dna_rna_from_directory
 from cleanup.remove_empty_structures import remove_unused_pdb_files
@@ -21,10 +19,11 @@ from cleanup.remove_multiple_models import remove_multiple_models_from_directory
 from cleanup.remove_water import remove_water_from_directory
 from extraction.convert_pdb_to_smiles_sdf import convert_pdb_to_smiles_sdf
 from extraction.parse_dict import extract_and_save_complexes_with_ligands
-from pdb_manipulations.protein_ligand_separator import protein_ligand_separator
-from pdb_manipulations.split_bioml import bioml_split
 from pdb_manipulations.foldseek import find_duplicates_foldseek
+from pdb_manipulations.protein_ligand_separator import protein_ligand_separator
 from pdb_manipulations.remove_similar_structures import remove_similar_structures
+from pdb_manipulations.split_bioml import bioml_split
+from utils.clean_names import clean_multiple_paths
 
 warnings.filterwarnings("ignore", category=BiopythonDeprecationWarning)
 
@@ -73,7 +72,6 @@ def test_run_pipeline():
         if not pdb_files:
             logger.warning("No PDB files found in the processed directory for testing.")
 
-
         _ = remove_dna_rna_from_directory(test_cfg)
         _ = remove_multiple_models_from_directory(test_cfg)
         _ = remove_water_from_directory(test_cfg)
@@ -88,7 +86,6 @@ def test_run_pipeline():
         _ = find_duplicates_foldseek(test_cfg)
         _ = remove_similar_structures(test_cfg)
 
- 
         shutil.copytree(processed_dir, processed_path, dirs_exist_ok=True)
         shutil.copytree(test_cfg.paths.bioml_dir, bioml_path, dirs_exist_ok=True)
         shutil.copytree(

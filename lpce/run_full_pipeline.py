@@ -14,11 +14,10 @@ from extraction.extract_complexes import extract_complexes
 from extraction.parse_dict import extract_and_save_complexes_with_ligands
 from hydra import compose, initialize
 from loguru import logger
-from pdb_manipulations.protein_ligand_separator import protein_ligand_separator
-from pdb_manipulations.split_bioml import bioml_split
 from pdb_manipulations.foldseek import find_duplicates_foldseek
+from pdb_manipulations.protein_ligand_separator import protein_ligand_separator
 from pdb_manipulations.remove_similar_structures import remove_similar_structures
-
+from pdb_manipulations.split_bioml import bioml_split
 from utils.clean_names import clean_multiple_paths
 from utils.send_email import send_email_notification
 
@@ -57,6 +56,7 @@ def main():
     _ = clean_multiple_paths(cfg)
     _ = find_duplicates_foldseek(cfg)
     _ = remove_similar_structures(cfg)
+
 
 if __name__ == "__main__":
     main()

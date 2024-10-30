@@ -13,8 +13,7 @@ output_files:
   removed_ligands_summary_json: data/removed_ligands_summary.json
   filtered_ligands_json: data/filtered_ligands.json
   cleaned_complexes_json: data/cleaned_complexes.json
-  identical_groups_pkl: data/identical_groups.pkl
-  
+
 
 
 rsync:
@@ -35,6 +34,7 @@ foldseek:
   foldseek_log: logs/foldseek.log
   foldseek_path: /home/nikolenko/work/soft/foldseek/bin/foldseek
   prostt5_path: /home/nikolenko/work/soft/prostt5_model
+  identical_groups: data/identical_groups.json
   tmscore_threshold: 0.8       # TM-score threshold to consider structures as similar.
   fident_threshold: 0.8        # Identity threshold to consider structures as similar.
   n_jobs: 112                  # Number of threads to use.

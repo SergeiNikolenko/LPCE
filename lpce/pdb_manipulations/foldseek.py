@@ -1,15 +1,19 @@
+import json
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
+
 from loguru import logger
 from tqdm import tqdm
-import tempfile
-import pickle
 
 logger.remove()
 logger.add(sys.stdout, format="{message}", level="INFO")
 
-def run_foldseek(cfg, input_dir, tmscore_threshold=0.5, fident_threshold=0.9, n_jobs=56):
+
+def run_foldseek(
+    cfg, input_dir, tmscore_threshold=0.5, fident_threshold=0.9, n_jobs=56
+):
     """
     Runs Foldseek with specified parameters.
 
@@ -42,26 +46,31 @@ def run_foldseek(cfg, input_dir, tmscore_threshold=0.5, fident_threshold=0.9, n_
                     "createdb",
                     str(input_dir),
                     str(db_path),
-                    "--threads", str(n_jobs)
+                    "--threads",
+                    str(n_jobs),
                 ]
                 process = subprocess.Popen(
                     createdb_command,
                     stdout=subprocess.PIPE,
                     stderr=subprocess.STDOUT,
-                    universal_newlines=True
+                    universal_newlines=True,
                 )
                 logger.info("createdb process started")
 
                 # Initialize progress bar for 'createdb'
-                total_equals_createdb = 65  # Assuming progress bar has 65 '=' characters
-                pbar_createdb = tqdm(total=total_equals_createdb, desc="Creating Database", unit="chars")
+                total_equals_createdb = (
+                    65  # Assuming progress bar has 65 '=' characters
+                )
+                pbar_createdb = tqdm(
+                    total=total_equals_createdb, desc="Creating Database", unit="chars"
+                )
 
                 for line in process.stdout:
                     log_file.write(line)
-                    if line.startswith('[') and ']' in line:
+                    if line.startswith("[") and "]" in line:
                         # Extract the progress bar part
-                        progress_bar = line[line.find('['):line.find(']')+1]
-                        num_equals = progress_bar.count('=')
+                        progress_bar = line[line.find("[") : line.find("]") + 1]
+                        num_equals = progress_bar.count("=")
                         pbar_createdb.n = num_equals
                         pbar_createdb.refresh()
                 process.wait()
@@ -81,26 +90,36 @@ def run_foldseek(cfg, input_dir, tmscore_threshold=0.5, fident_threshold=0.9, n_
                     str(db_path),
                     str(aln_output),
                     str(output_dir),
-                    "--format-output", "query,target,fident,evalue",
-                    "--max-seqs", "10000",
-                    "--alignment-type", "2",
-                    "--tmscore-threshold", str(tmscore_threshold),
-                    "--threads", str(n_jobs),
-                    "--prostt5-model", prostt5_path 
+                    "--format-output",
+                    "query,target,fident,evalue",
+                    "--max-seqs",
+                    "10000",
+                    "--alignment-type",
+                    "2",
+                    "--tmscore-threshold",
+                    str(tmscore_threshold),
+                    "--threads",
+                    str(n_jobs),
+                    "--prostt5-model",
+                    prostt5_path,
                 ]
 
                 process = subprocess.Popen(
                     command,
                     stdout=subprocess.PIPE,
                     stderr=subprocess.STDOUT,
-                    universal_newlines=True
+                    universal_newlines=True,
                 )
 
                 logger.info("easy-search process started")
 
                 # Initialize progress bar for 'easy-search'
                 total_equals_easysearch = 5 * 65
-                pbar_easysearch = tqdm(total=total_equals_easysearch, desc="Foldseek Progress", unit="chars")
+                pbar_easysearch = tqdm(
+                    total=total_equals_easysearch,
+                    desc="Foldseek Progress",
+                    unit="chars",
+                )
 
                 # Read the output character by character
                 while True:
@@ -108,7 +127,7 @@ def run_foldseek(cfg, input_dir, tmscore_threshold=0.5, fident_threshold=0.9, n_
                     if not char:
                         break
                     log_file.write(char)
-                    if char == '=':
+                    if char == "=":
                         pbar_easysearch.update(1)
 
                 process.wait()
@@ -124,7 +143,7 @@ def run_foldseek(cfg, input_dir, tmscore_threshold=0.5, fident_threshold=0.9, n_
 
         # Reading and processing Foldseek results
         logger.info("Reading Foldseek alignment results")
-        with open(aln_output, 'r') as f:
+        with open(aln_output) as f:
             for line in f:
                 query, target, fident, evalue = line.strip().split()[:4]
                 fident = float(fident)
@@ -141,8 +160,11 @@ def run_foldseek(cfg, input_dir, tmscore_threshold=0.5, fident_threshold=0.9, n_
                 groups.append(group)
                 visited.update(group)
 
-        logger.info(f"run_foldseek completed, found {len(groups)} groups of identical structures")
+        logger.info(
+            f"run_foldseek completed, found {len(groups)} groups of identical structures"
+        )
         return groups
+
 
 def find_duplicates_foldseek(cfg):
     """
@@ -154,13 +176,20 @@ def find_duplicates_foldseek(cfg):
     n_jobs = cfg.foldseek.n_jobs
 
     logger.info(f"Searching for identical structures in {input_dir} with Foldseek")
-    logger.info(f"tmscore_threshold = {tmscore_threshold}, fident_threshold = {fident_threshold}, n_jobs = {n_jobs}")
+    logger.info(
+        f"tmscore_threshold = {tmscore_threshold}, fident_threshold = {fident_threshold}, n_jobs = {n_jobs}"
+    )
 
-    identical_groups = run_foldseek(cfg, input_dir, tmscore_threshold, fident_threshold, n_jobs)
+    identical_groups = run_foldseek(
+        cfg, input_dir, tmscore_threshold, fident_threshold, n_jobs
+    )
 
-    with open(cfg.output_files.identical_groups_pkl, 'wb') as f:
-        pickle.dump(identical_groups, f)
+    identical_groups_json_compatible = [list(group) for group in identical_groups]
+    with open(cfg.foldseek.identical_groups, "w") as f:
+        json.dump(identical_groups_json_compatible, f)
 
     logger.info("========== Foldseek analysis completed ==========")
-    logger.info(f"Search completed. Found {len(identical_groups)} groups of identical structures.")
+    logger.info(
+        f"Search completed. Found {len(identical_groups)} groups of identical structures."
+    )
     return identical_groups
