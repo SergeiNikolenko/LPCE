@@ -96,7 +96,7 @@ def test_run_pipeline():
         not_buried = remove_not_buried_ligands(test_cfg)
         add_h_to_ligands(test_cfg)
 
-        json_output_path = Path(cfg.output_files.removed_files_json)
+        json_output_path = Path("../data/removed_files_tests.json")
         save_removed_files_to_json(
             dna_rna, models, unused, not_buried, json_output_path
         )

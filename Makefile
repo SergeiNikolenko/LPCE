@@ -1,7 +1,7 @@
 .PHONY: all run_pipeline test tests pre-commit clean
 
 
-all: clean tests_success run_pipeline end
+all: clean tests_success clean run_pipeline end
 
 run_pipeline:
 	clear
@@ -40,6 +40,7 @@ clean:
 	rm -rf data/filtered_ligands.json
 	rm -rf data/site_info.json
 	rm -rf data/grouped_complexes.json
+	rm -rf data/removed_files.json
 
 end:
 	rm -rf /mnt/ligandpro/db/LPCE/raw
