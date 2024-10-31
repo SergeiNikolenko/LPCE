@@ -1,6 +1,7 @@
 import json
-from pathlib import Path
+
 from loguru import logger
+
 
 def save_removed_files_to_json(dna_rna, models, unused, not_buried, output_path):
     """

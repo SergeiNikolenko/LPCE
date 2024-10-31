@@ -14,16 +14,16 @@ from extraction.extract_complexes import extract_complexes
 from extraction.parse_dict import extract_and_save_complexes_with_ligands
 from hydra import compose, initialize
 from loguru import logger
+from pdb_manipulations.add_h_to_ligands import add_h_to_ligands
 from pdb_manipulations.foldseek import find_duplicates_foldseek
 from pdb_manipulations.protein_ligand_separator import protein_ligand_separator
+from pdb_manipulations.remove_not_buried_ligands import remove_not_buried_ligands
 from pdb_manipulations.remove_similar_structures import remove_similar_structures
 from pdb_manipulations.split_bioml import bioml_split
-from pdb_manipulations.remove_not_buried_ligands import remove_not_buried_ligands
-from pdb_manipulations.add_h_to_ligands import add_h_to_ligands
-
 from utils.clean_names import clean_multiple_paths
 from utils.send_email import send_email_notification
 from utils.utils import save_removed_files_to_json
+
 
 def main():
     with initialize(config_path="config", version_base=None):
@@ -64,8 +64,6 @@ def main():
 
     json_output_path = Path(cfg.output_files.removed_files_json)
     save_removed_files_to_json(dna_rna, models, unused, not_buried, json_output_path)
-
-
 
 
 if __name__ == "__main__":

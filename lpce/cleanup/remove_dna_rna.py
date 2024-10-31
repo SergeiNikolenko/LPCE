@@ -1,8 +1,10 @@
 import os
 from pathlib import Path
+
 import joblib
-from tqdm import tqdm
 from loguru import logger
+from tqdm import tqdm
+
 
 def contains_dna_rna_sequence(content: str) -> bool:
     """
@@ -105,6 +107,8 @@ def remove_dna_rna_from_directory(cfg) -> dict:
     logger.info(f"Total files analyzed: {len(files):,}")
     logger.info(f"Files removed: {len(removed_files):,}")
     logger.info(f"Files retained: {len(retained_files):,}")
-    logger.info(f"Percentage of files retained: {len(retained_files) / len(files) * 100:.2f}%")
+    logger.info(
+        f"Percentage of files retained: {len(retained_files) / len(files) * 100:.2f}%"
+    )
 
     return {"removed_files": removed_files}

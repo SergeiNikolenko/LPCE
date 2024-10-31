@@ -1,5 +1,4 @@
 import json
-import multiprocessing
 from collections import Counter
 from pathlib import Path
 
@@ -111,7 +110,6 @@ def remove_junk_ligands_from_directory(cfg) -> dict:
     total_files = len(pdb_files)
 
     logger.info(f"Found {total_files} PDB files in {input_directory}")
-
 
     # Parallel processing of files
     results = Parallel(n_jobs=cfg.n_jobs)(

@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+
 import joblib
 from loguru import logger
 from tqdm import tqdm
@@ -35,14 +36,17 @@ def process_file(file: Path) -> tuple[bool, str]:
         file (Path): The path to the PDB file.
 
     Returns:
-        tuple: (bool, str) where bool indicates if the file is retained, 
+        tuple: (bool, str) where bool indicates if the file is retained,
                and str is the filename (used for tracking removed files).
     """
     models = count_models_in_file(file)
     if models > 1:
         try:
             os.remove(file)
-            return False, file.stem[3:]  # Extract file name without "pdb" prefix and ".pdb" suffix
+            return (
+                False,
+                file.stem[3:],
+            )  # Extract file name without "pdb" prefix and ".pdb" suffix
         except Exception as e:
             logger.error(f"Error removing file {file}: {e}")
             return False, file.stem[3:]
@@ -74,7 +78,9 @@ def remove_multiple_models_from_directory(cfg: object) -> dict:
 
     removed_files = [file for retained, file in results if not retained]
     retained_files = total_files - len(removed_files)
-    remaining_percentage = (retained_files / total_files * 100) if total_files > 0 else 0
+    remaining_percentage = (
+        (retained_files / total_files * 100) if total_files > 0 else 0
+    )
 
     logger.info(f"Total files analyzed: {total_files:,}")
     logger.info(f"Files retained after removal: {retained_files:,}")

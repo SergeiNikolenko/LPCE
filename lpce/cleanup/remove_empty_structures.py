@@ -1,5 +1,6 @@
 import json
 from pathlib import Path
+
 from loguru import logger
 
 
@@ -29,10 +30,9 @@ def remove_unused_pdb_files(cfg) -> dict:
         pdb_id = pdb_file.stem[3:].lower()
         if pdb_id not in proteins_to_keep:
             pdb_file.unlink()
-            removed_files.append(pdb_id)  
+            removed_files.append(pdb_id)
         else:
             kept_files.append(pdb_file.stem[3:].lower())
-
 
     logger.info("========== Removing Unused PDB Files ==========")
     logger.info(f"Total PDB files in directory: {len(pdb_files):,}")

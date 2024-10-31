@@ -19,12 +19,12 @@ from cleanup.remove_multiple_models import remove_multiple_models_from_directory
 from cleanup.remove_water import remove_water_from_directory
 from extraction.convert_pdb_to_smiles_sdf import convert_pdb_to_smiles_sdf
 from extraction.parse_dict import extract_and_save_complexes_with_ligands
+from pdb_manipulations.add_h_to_ligands import add_h_to_ligands
 from pdb_manipulations.foldseek import find_duplicates_foldseek
 from pdb_manipulations.protein_ligand_separator import protein_ligand_separator
+from pdb_manipulations.remove_not_buried_ligands import remove_not_buried_ligands
 from pdb_manipulations.remove_similar_structures import remove_similar_structures
 from pdb_manipulations.split_bioml import bioml_split
-from pdb_manipulations.remove_not_buried_ligands import remove_not_buried_ligands
-from pdb_manipulations.add_h_to_ligands import add_h_to_ligands
 from utils.clean_names import clean_multiple_paths
 from utils.utils import save_removed_files_to_json
 
@@ -63,7 +63,6 @@ def test_run_pipeline():
         logs_dir = temp_path / "logs"
         logs_dir.mkdir(parents=True, exist_ok=True)
 
-
         test_cfg = cfg.copy()
         test_cfg.paths.processed_dir = str(processed_dir)
         test_cfg.paths.bioml_dir = str(temp_path / "bioml")
@@ -98,8 +97,9 @@ def test_run_pipeline():
         add_h_to_ligands(test_cfg)
 
         json_output_path = Path(cfg.output_files.removed_files_json)
-        save_removed_files_to_json(dna_rna, models, unused, not_buried, json_output_path)
-
+        save_removed_files_to_json(
+            dna_rna, models, unused, not_buried, json_output_path
+        )
 
         shutil.copytree(processed_dir, processed_path, dirs_exist_ok=True)
         shutil.copytree(test_cfg.paths.bioml_dir, bioml_path, dirs_exist_ok=True)

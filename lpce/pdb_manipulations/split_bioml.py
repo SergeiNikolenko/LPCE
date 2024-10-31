@@ -221,8 +221,8 @@ def process_pdb_file_with_inclusion_check(pdb_file, output_dir):
             remove_duplicate_and_included_biomolecules(biomolecule_files)
         )
         return unique_files, duplicates, inclusions
-    except Exception as e:
-        #logger.error(f"Error processing {pdb_file}: {e}")
+    except Exception:
+        # logger.error(f"Error processing {pdb_file}: {e}")
         return [], [], []
 
 
