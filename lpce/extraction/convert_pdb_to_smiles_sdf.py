@@ -118,7 +118,7 @@ def convert_pdb_to_smiles_sdf(cfg: object) -> None:
         f"Processing {total_files} PDB files from {Path(cfg.paths.processed_dir)}"
     )
 
-    results = Parallel(n_jobs=-1)(
+    results = Parallel(n_jobs=cfg.n_jobs)(
         delayed(process_pdb_file)(pdb_file, smiles_output_dir, sdf_output_dir)
         for pdb_file in tqdm(pdb_files, desc="Processing PDB files")
     )

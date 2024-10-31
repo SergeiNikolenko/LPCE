@@ -27,6 +27,7 @@ def get_file_size_in_gb(file_path: Path) -> float:
 def decompress_pdb_files(cfg: object) -> None:
     logger.info("========== Decompressing Files ==========")
     output_dir = Path(cfg.paths.processed_dir)
+    n_jobs = cfg.n_jobs
     output_dir.mkdir(parents=True, exist_ok=True)
 
     input_output_paths = [
@@ -37,7 +38,7 @@ def decompress_pdb_files(cfg: object) -> None:
 
     logger.info(f"Total .ent.gz files to decompress: {total_files}")
 
-    results = Parallel(n_jobs=-1, backend="threading")(
+    results = Parallel(n_jobs=n_jobs, backend="threading")(
         delayed(decompress_file)(input_path, output_path)
         for input_path, output_path in tqdm(
             input_output_paths,

@@ -1,6 +1,5 @@
 import os
 from pathlib import Path
-
 import joblib
 from loguru import logger
 from tqdm import tqdm
@@ -28,7 +27,7 @@ def count_models_in_file(file_path: Path) -> int:
         return 0
 
 
-def process_file(file: Path) -> bool:
+def process_file(file: Path) -> tuple[bool, str]:
     """
     Processes a single PDB file and removes it if it contains multiple models.
 
@@ -36,30 +35,29 @@ def process_file(file: Path) -> bool:
         file (Path): The path to the PDB file.
 
     Returns:
-        bool: True if the file is retained, False if it is removed.
+        tuple: (bool, str) where bool indicates if the file is retained, 
+               and str is the filename (used for tracking removed files).
     """
     models = count_models_in_file(file)
     if models > 1:
         try:
             os.remove(file)
-            # logger.debug(f"Removed file {file} containing {models} models.")
-            return False
+            return False, file.stem[3:]  # Extract file name without "pdb" prefix and ".pdb" suffix
         except Exception as e:
             logger.error(f"Error removing file {file}: {e}")
-            return False
-    return True
+            return False, file.stem[3:]
+    return True, file.stem[3:]
 
 
-def remove_multiple_models_from_directory(cfg: object) -> None:
+def remove_multiple_models_from_directory(cfg: object) -> dict:
     """
     Removes PDB files containing multiple models from the specified directory.
 
     Args:
-        input_dir (Path): The directory to scan for PDB files.
-        log_file (str): The path to the log file where the process is logged.
+        cfg (object): Configuration object with paths.
 
     Returns:
-        None
+        dict: {"removed_files": list} - list of removed file names.
     """
     input_dir = Path(cfg.paths.processed_dir)
 
@@ -69,17 +67,18 @@ def remove_multiple_models_from_directory(cfg: object) -> None:
 
     logger.info(f"Total PDB files to analyze: {total_files}")
 
-    results = joblib.Parallel(n_jobs=-1)(
+    results = joblib.Parallel(n_jobs=cfg.n_jobs)(
         joblib.delayed(process_file)(file)
         for file in tqdm(files, desc="Removing multiple models")
     )
-    retained_files = sum(results)
-    removed_files = total_files - retained_files
-    remaining_percentage = (
-        (retained_files / total_files * 100) if total_files > 0 else 0
-    )
+
+    removed_files = [file for retained, file in results if not retained]
+    retained_files = total_files - len(removed_files)
+    remaining_percentage = (retained_files / total_files * 100) if total_files > 0 else 0
 
     logger.info(f"Total files analyzed: {total_files:,}")
     logger.info(f"Files retained after removal: {retained_files:,}")
-    logger.info(f"Files removed: {removed_files:,}")
+    logger.info(f"Files removed: {len(removed_files):,}")
     logger.info(f"Percentage of files retained: {remaining_percentage:.2f}%")
+
+    return {"removed_files": removed_files}

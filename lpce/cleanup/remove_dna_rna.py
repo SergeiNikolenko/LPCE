@@ -1,9 +1,8 @@
 import os
 from pathlib import Path
-
 import joblib
 from tqdm import tqdm
-
+from loguru import logger
 
 def contains_dna_rna_sequence(content: str) -> bool:
     """
@@ -83,24 +82,29 @@ def remove_dna_rna_from_directory(cfg) -> dict:
     """
     input_dir = Path(cfg.paths.processed_dir)
     files = list(input_dir.glob("*.pdb"))
-    len(files)
 
     # Use parallel processing for files
-    results = joblib.Parallel(n_jobs=-1)(
+    results = joblib.Parallel(n_jobs=cfg.n_jobs)(
         joblib.delayed(process_file)(file)
         for file in tqdm(files, desc="Removing DNA/RNA")
     )
 
     # Form lists of removed and retained files
     retained_files = [
-        str(files[i].name) for i, result in enumerate(results) if result == "retained"
+        files[i].stem[3:] for i, result in enumerate(results) if result == "retained"
     ]
     removed_files = [
-        str(files[i].name) for i, result in enumerate(results) if result == "removed"
+        files[i].stem[3:] for i, result in enumerate(results) if result == "removed"
     ]
     errors = [
-        str(files[i].name) for i, result in enumerate(results) if result == "error"
+        files[i].stem[3:] for i, result in enumerate(results) if result == "error"
     ]
 
     # Return results
-    return {"retained": retained_files, "removed": removed_files, "errors": errors}
+    logger.info(f"======== Removing DNA/RNA from PDB files ========")
+    logger.info(f"Total files analyzed: {len(files):,}")
+    logger.info(f"Files removed: {len(removed_files):,}")
+    logger.info(f"Files retained: {len(retained_files):,}")
+    logger.info(f"Percentage of files retained: {len(retained_files) / len(files) * 100:.2f}%")
+
+    return {"removed_files": removed_files}

@@ -222,7 +222,7 @@ def process_pdb_file_with_inclusion_check(pdb_file, output_dir):
         )
         return unique_files, duplicates, inclusions
     except Exception as e:
-        logger.error(f"Error processing {pdb_file}: {e}")
+        #logger.error(f"Error processing {pdb_file}: {e}")
         return [], [], []
 
 
@@ -253,7 +253,7 @@ def bioml_split(cfg) -> dict:
     all_duplicates = []
     all_inclusions = []
 
-    with Parallel(n_jobs=-1) as parallel:
+    with Parallel(n_jobs=cfg.n_jobs) as parallel:
         results = parallel(
             delayed(process_pdb_file_with_inclusion_check)(pdb_file, output_dir)
             for pdb_file in tqdm(pdb_files, desc="Processing PDB files")

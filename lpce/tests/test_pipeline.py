@@ -23,7 +23,10 @@ from pdb_manipulations.foldseek import find_duplicates_foldseek
 from pdb_manipulations.protein_ligand_separator import protein_ligand_separator
 from pdb_manipulations.remove_similar_structures import remove_similar_structures
 from pdb_manipulations.split_bioml import bioml_split
+from pdb_manipulations.remove_not_buried_ligands import remove_not_buried_ligands
+from pdb_manipulations.add_h_to_ligands import add_h_to_ligands
 from utils.clean_names import clean_multiple_paths
+from utils.utils import save_removed_files_to_json
 
 warnings.filterwarnings("ignore", category=BiopythonDeprecationWarning)
 
@@ -57,11 +60,17 @@ def test_run_pipeline():
         ligands_dir = temp_path / "ligands"
         ligands_dir.mkdir(parents=True, exist_ok=True)
 
+        logs_dir = temp_path / "logs"
+        logs_dir.mkdir(parents=True, exist_ok=True)
+
+
         test_cfg = cfg.copy()
         test_cfg.paths.processed_dir = str(processed_dir)
         test_cfg.paths.bioml_dir = str(temp_path / "bioml")
         test_cfg.paths.ligands_dir = str(temp_path / "ligands")
         test_cfg.paths.separated_dir = str(temp_path / "separated")
+        test_cfg.paths.separated_fixed = str(temp_path / "separated_fixed")
+        test_cfg.logging.log_file = str(logs_dir / "foldseek.log")
 
         shutil.copytree(test_data_dir, processed_dir, dirs_exist_ok=True)
 
@@ -72,19 +81,25 @@ def test_run_pipeline():
         if not pdb_files:
             logger.warning("No PDB files found in the processed directory for testing.")
 
-        _ = remove_dna_rna_from_directory(test_cfg)
-        _ = remove_multiple_models_from_directory(test_cfg)
-        _ = remove_water_from_directory(test_cfg)
-        _ = remove_junk_ligands_from_directory(test_cfg)
-        _ = convert_pdb_to_smiles_sdf(test_cfg)
-        _ = extract_and_save_complexes_with_ligands(test_cfg)
-        _ = filter_ligands(test_cfg)
-        _ = remove_unused_pdb_files(test_cfg)
-        _ = bioml_split(test_cfg)
-        _ = protein_ligand_separator(test_cfg)
-        _ = clean_multiple_paths(test_cfg)
-        _ = find_duplicates_foldseek(test_cfg)
-        _ = remove_similar_structures(test_cfg)
+        dna_rna = remove_dna_rna_from_directory(test_cfg)
+        models = remove_multiple_models_from_directory(test_cfg)
+        remove_water_from_directory(test_cfg)
+        remove_junk_ligands_from_directory(test_cfg)
+        convert_pdb_to_smiles_sdf(test_cfg)
+        extract_and_save_complexes_with_ligands(test_cfg)
+        filter_ligands(test_cfg)
+        unused = remove_unused_pdb_files(test_cfg)
+        bioml_split(test_cfg)
+        protein_ligand_separator(test_cfg)
+        clean_multiple_paths(test_cfg)
+        find_duplicates_foldseek(test_cfg)
+        remove_similar_structures(test_cfg)
+        not_buried = remove_not_buried_ligands(test_cfg)
+        add_h_to_ligands(test_cfg)
+
+        json_output_path = Path(cfg.output_files.removed_files_json)
+        save_removed_files_to_json(dna_rna, models, unused, not_buried, json_output_path)
+
 
         shutil.copytree(processed_dir, processed_path, dirs_exist_ok=True)
         shutil.copytree(test_cfg.paths.bioml_dir, bioml_path, dirs_exist_ok=True)

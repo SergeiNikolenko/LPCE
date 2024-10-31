@@ -8,12 +8,14 @@ lpce/tests/processed/*
 lpce/tests/separated/*
 lpce/tests/bioml/*
 lpce/tests/test_data/*
+lpce/tests/separated_fixed/*
 
 data/filtered_ligands.json
 data/site_info.json
 data/grouped_complexes.json
 data/removed_ligands_summary.json
 data/identical_groups.json
+data/removed_files.json
 
 .DS_Store
 .ruff_cache/

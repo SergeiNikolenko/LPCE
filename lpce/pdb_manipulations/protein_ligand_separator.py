@@ -495,7 +495,7 @@ def protein_ligand_separator(cfg):
 
     os.makedirs(output_dir, exist_ok=True)
 
-    results = Parallel(n_jobs=-1)(
+    results = Parallel(n_jobs=cfg.n_jobs)(
         delayed(analyze_protein)(
             pdb_file,
             output_dir,

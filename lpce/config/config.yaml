@@ -1,11 +1,15 @@
+n_jobs: -1
+
 paths:
   raw_dir: /mnt/ligandpro/db/LPCE/raw/pdb
   processed_dir: /mnt/ligandpro/db/LPCE/processed
   ligands_dir: /mnt/ligandpro/db/LPCE/ligands
   bioml_dir: /mnt/ligandpro/db/LPCE/bioml
   separated_dir: /mnt/ligandpro/db/LPCE/separated
+  separated_fixed: /mnt/ligandpro/db/LPCE/separated_fixed
 
 output_files:
+  removed_files_json: data/removed_files.json
   complexes_json: data/complexes.json
   grouped_complexes_json: data/grouped_complexes.json
   site_info_json: data/site_info.json
@@ -43,3 +47,7 @@ email:
   user: ${oc.env:EMAIL_USER}
   password: ${oc.env:EMAIL_PASSWORD}
   recipient: Nikolenko.Sergei@icloud.com
+
+buried:
+  buried_threshold: 0.3       # Threshold for buried ligands.
+  buried_distance_cutoff: 5.0 # Distance cutoff for buried ligands.

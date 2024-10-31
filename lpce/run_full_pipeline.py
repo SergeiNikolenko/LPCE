@@ -18,9 +18,12 @@ from pdb_manipulations.foldseek import find_duplicates_foldseek
 from pdb_manipulations.protein_ligand_separator import protein_ligand_separator
 from pdb_manipulations.remove_similar_structures import remove_similar_structures
 from pdb_manipulations.split_bioml import bioml_split
+from pdb_manipulations.remove_not_buried_ligands import remove_not_buried_ligands
+from pdb_manipulations.add_h_to_ligands import add_h_to_ligands
+
 from utils.clean_names import clean_multiple_paths
 from utils.send_email import send_email_notification
-
+from utils.utils import save_removed_files_to_json
 
 def main():
     with initialize(config_path="config", version_base=None):
@@ -40,22 +43,29 @@ def main():
 
     logger.debug(f"Config: {cfg}")
 
-    _ = extract_complexes(cfg)
-    _ = decompress_pdb_files(cfg)
-    _ = remove_dna_rna_from_directory(cfg)
-    _ = remove_multiple_models_from_directory(cfg)
-    _ = remove_water_from_directory(cfg)
-    _ = remove_junk_ligands_from_directory(cfg)
-    _ = convert_pdb_to_smiles_sdf(cfg)
-    _ = extract_and_save_complexes_with_ligands(cfg)
-    _ = filter_ligands(cfg)
-    _ = remove_unused_pdb_files(cfg)
-    _ = bioml_split(cfg)
-    _ = protein_ligand_separator(cfg)
-    _ = send_email_notification(cfg)
-    _ = clean_multiple_paths(cfg)
-    _ = find_duplicates_foldseek(cfg)
-    _ = remove_similar_structures(cfg)
+    extract_complexes(cfg)
+    decompress_pdb_files(cfg)
+    dna_rna = remove_dna_rna_from_directory(cfg)
+    models = remove_multiple_models_from_directory(cfg)
+    remove_water_from_directory(cfg)
+    remove_junk_ligands_from_directory(cfg)
+    convert_pdb_to_smiles_sdf(cfg)
+    extract_and_save_complexes_with_ligands(cfg)
+    filter_ligands(cfg)
+    unused = remove_unused_pdb_files(cfg)
+    bioml_split(cfg)
+    protein_ligand_separator(cfg)
+    send_email_notification(cfg)
+    clean_multiple_paths(cfg)
+    find_duplicates_foldseek(cfg)
+    remove_similar_structures(cfg)
+    not_buried = remove_not_buried_ligands(cfg)
+    add_h_to_ligands(cfg)
+
+    json_output_path = Path(cfg.output_files.removed_files_json)
+    save_removed_files_to_json(dna_rna, models, unused, not_buried, json_output_path)
+
+
 
 
 if __name__ == "__main__":
