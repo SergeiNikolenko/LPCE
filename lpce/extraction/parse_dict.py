@@ -51,20 +51,13 @@ def parse_pdb_file(file_path: Path) -> list:
         return None
 
 
-def process_single_file(pdb_file: Path, pdb_directory: Path) -> tuple:
-    """
-    Processes a single PDB file to extract ligand information.
-
-    Args:
-        pdb_file (Path): The PDB file to process.
-        pdb_directory (Path): The directory containing the PDB files.
-
-    Returns:
-        tuple: A tuple containing the PDB ID and the extracted ligand information.
-    """
-    pdb_id = pdb_file.stem[3:]
-    file_path = pdb_directory / pdb_file
+def process_single_file(pdb_file: Path) -> tuple:
+    pdb_id = pdb_file.stem[-4:]
+    file_path = pdb_file
     return pdb_id, parse_pdb_file(file_path)
+
+
+
 
 
 def extract_complexes_with_ligands(pdb_directory: Path, max_files: int = None) -> dict:
@@ -87,7 +80,7 @@ def extract_complexes_with_ligands(pdb_directory: Path, max_files: int = None) -
 
     results = []
     for result in Parallel(n_jobs=-1)(
-        delayed(process_single_file)(pdb_file, pdb_directory)
+        delayed(process_single_file)(pdb_file)
         for pdb_file in tqdm(pdb_files, desc="Processing files", unit="file")
     ):
         results.append(result)
@@ -161,16 +154,8 @@ def extract_site_info(pdb_file: Path) -> list:
 
 
 def get_pdb_id(pdb_file_name: str) -> str:
-    """
-    Extracts the PDB ID from a PDB file name.
-
-    Args:
-        pdb_file_name (str): The name of the PDB file.
-
-    Returns:
-        str: The extracted PDB ID.
-    """
-    return pdb_file_name.replace(".pdb", "")[3:]
+    pdb_id = pdb_file_name.replace(".pdb", "")[-4:]
+    return pdb_id
 
 
 def load_trash_ligands(file_path: Path) -> set:
@@ -303,17 +288,19 @@ def extract_and_save_complexes_with_ligands(cfg) -> None:
     Args:
         cfg: Hydra configuration object with paths and logging settings.
     """
-    logger.info("========== Extracting and Saving Complexes with Ligands ==========")
+    logger.info("\n========== Extracting and Saving Complexes with Ligands ==========")
 
     pdb_directory = Path(cfg.paths.processed_dir)
 
     complexes = extract_complexes_with_ligands(pdb_directory)
+    logger.info(f"Total complexes: {len(complexes.keys())}")
     # save_complexes_to_json(complexes, Path(cfg.output_files.complexes_json))
 
     grouped_complexes = create_grouped_complexes_dict(complexes)
     save_complexes_to_json(
         grouped_complexes, Path(cfg.output_files.grouped_complexes_json)
     )
+    logger.info(f"Total grouped complexes: {len(grouped_complexes.keys())}")
 
     site_info_dict = process_site_info_from_pdb_files(pdb_directory)
     final_cleaned_site_info_dict = {
@@ -327,3 +314,4 @@ def extract_and_save_complexes_with_ligands(cfg) -> None:
     save_complexes_to_json(
         final_transformed_site_info, Path(cfg.output_files.site_info_json)
     )
+    logger.info(f"Total pdb sites info: {len(final_transformed_site_info.keys())}")

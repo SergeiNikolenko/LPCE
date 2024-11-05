@@ -63,7 +63,7 @@ def filter_ligands(cfg):
         (ligand_deletions / total_ligands_grouped) * 100 if total_ligands_grouped else 0
     )
 
-    logger.info("========== Filtering Ligands ==========")
+    logger.info("\n========== Filtering Ligands ==========")
     logger.info(f"Total proteins analyzed: {total_proteins_grouped:,}")
     logger.info(f"Total ligands analyzed: {total_ligands_grouped:,}")
     logger.info(f"Proteins with site info available: {total_proteins_site_info:,}")

@@ -225,7 +225,6 @@ def process_pdb_file_with_inclusion_check(pdb_file, output_dir):
         # logger.error(f"Error processing {pdb_file}: {e}")
         return [], [], []
 
-
 def bioml_split(cfg) -> dict:
     """
     Splits PDB files into biomolecules based on REMARK 350 information,
@@ -243,8 +242,7 @@ def bioml_split(cfg) -> dict:
 
     pdb_files = get_pdb_files(input_dir)
     total_files = len(pdb_files)
-    logger.info(f"Total PDB files found: {total_files}")
-
+    
     # Ensure output directory exists
     os.makedirs(output_dir, exist_ok=True)
 
@@ -252,6 +250,7 @@ def bioml_split(cfg) -> dict:
     all_unique_files = []
     all_duplicates = []
     all_inclusions = []
+    total_biomolecules_created = 0
 
     with Parallel(n_jobs=cfg.n_jobs) as parallel:
         results = parallel(
@@ -261,13 +260,14 @@ def bioml_split(cfg) -> dict:
 
     # Collect results
     for unique_files, duplicates, inclusions in results:
+        total_biomolecules_created += len(unique_files) + len(duplicates) + len(inclusions)
         all_unique_files.extend(unique_files)
         all_duplicates.extend(duplicates)
         all_inclusions.extend(inclusions)
 
-    logger.info("========== Split Bioml ==========")
-    logger.info(f"Total PDB files processed: {total_files}")
-    logger.info(f"Total biomolecules created: {len(all_unique_files):,}")
+    logger.info("\n========== Split Bioml ==========")
+    logger.info(f"Total PDB files: {total_files}")
+    logger.info(f"Total biomolecules created: {total_biomolecules_created:,}")
     logger.info(f"Total duplicates removed: {len(all_duplicates):,}")
     logger.info(f"Total inclusions found: {len(all_inclusions):,}")
     logger.info(f"Biomolecules remaining after filtering: {len(all_unique_files):,}")

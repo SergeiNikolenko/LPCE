@@ -34,7 +34,7 @@ def remove_unused_pdb_files(cfg) -> dict:
         else:
             kept_files.append(pdb_file.stem[3:].lower())
 
-    logger.info("========== Removing Unused PDB Files ==========")
+    logger.info("\n========== Removing Unused PDB Files ==========")
     logger.info(f"Total PDB files in directory: {len(pdb_files):,}")
     logger.info(f"Filtered PDB files to keep: {len(kept_files):,}")
     logger.info(f"PDB files removed: {len(removed_files):,}")

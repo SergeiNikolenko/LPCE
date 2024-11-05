@@ -65,7 +65,7 @@ def remove_multiple_models_from_directory(cfg: object) -> dict:
     """
     input_dir = Path(cfg.paths.processed_dir)
 
-    logger.info("========== Removing PDB files with multiple models ==========")
+    logger.info("\n========== Removing PDB files with multiple models ==========")
     files = list(input_dir.glob("*.pdb"))
     total_files = len(files)
 

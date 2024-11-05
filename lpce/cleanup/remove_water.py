@@ -18,7 +18,7 @@ def remove_water_from_directory(cfg: object) -> dict:
     Returns:
         dict: Dictionary with lists of successfully processed and failed files.
     """
-    logger.info("========== Removing Water from PDB files ==========")
+    logger.info("\n========== Removing Water from PDB files ==========")
     pdb_files = list(Path(cfg.paths.processed_dir).rglob("*.pdb"))
     total_files = len(pdb_files)
 

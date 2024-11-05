@@ -100,7 +100,7 @@ def remove_junk_ligands_from_directory(cfg) -> dict:
     input_directory = Path(cfg.paths.processed_dir)
     junk_ligands_file = Path(cfg.output_files.trash_ligands_json)
 
-    logger.info("========== Removing Junk Ligands ==========")
+    logger.info("\n========== Removing Junk Ligands ==========")
 
     # Load the list of junk ligands
     with open(junk_ligands_file) as file:

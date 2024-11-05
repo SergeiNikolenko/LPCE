@@ -174,6 +174,11 @@ def find_duplicates_foldseek(cfg):
     tmscore_threshold = cfg.foldseek.tmscore_threshold
     fident_threshold = cfg.foldseek.fident_threshold
     n_jobs = cfg.foldseek.n_jobs
+    logger.info("\n========== Foldseek analysis completed ==========")
+
+    pdb_files = list(input_dir.glob("*.pdb"))
+    total_input_files = len(pdb_files)
+    logger.info(f"Total input files for Foldseek: {total_input_files}")
 
     logger.info(f"Searching for identical structures in {input_dir} with Foldseek")
     logger.info(
@@ -188,7 +193,7 @@ def find_duplicates_foldseek(cfg):
     with open(cfg.foldseek.identical_groups, "w") as f:
         json.dump(identical_groups_json_compatible, f)
 
-    logger.info("========== Foldseek analysis completed ==========")
+
     logger.info(
         f"Search completed. Found {len(identical_groups)} groups of identical structures."
     )

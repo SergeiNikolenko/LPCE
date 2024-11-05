@@ -25,7 +25,7 @@ def get_file_size_in_gb(file_path: Path) -> float:
 
 
 def decompress_pdb_files(cfg: object) -> None:
-    logger.info("========== Decompressing Files ==========")
+    logger.info("\n========== Decompressing Files ==========")
     output_dir = Path(cfg.paths.processed_dir)
     n_jobs = cfg.n_jobs
     output_dir.mkdir(parents=True, exist_ok=True)

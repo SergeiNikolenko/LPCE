@@ -1,19 +1,24 @@
-.PHONY: all run_pipeline test tests pre-commit clean
+.PHONY: all run_pipeline test tests pre-commit clean tmux
 
+CONFIG_NAME ?= config
 
 all: clean tests_success clean run_pipeline end
 
+tmux:
+	@tmux new-session -d -s lpce "make all CONFIG_FILE=$(CONFIG_NAME)"
+	@tmux attach -t lpce
+
 run_pipeline:
 	clear
-	python lpce/run_full_pipeline.py
+	python lpce/run_full_pipeline.py $(CONFIG_NAME)
 
 test:
 	clear
-	python lpce/tests/test_pipeline.py
+	python lpce/tests/test_pipeline.py $(CONFIG_NAME)
 
 tests:
 	clear
-	export JUPYTER_PLATFORM_DIRS=1 && pytest lpce/tests/
+	export JUPYTER_PLATFORM_DIRS=1 && pytest lpce/tests/ --config-name=$(CONFIG_NAME)
 
 tests_success:
 	@echo "Running tests..."
@@ -47,7 +52,6 @@ end:
 	rm -rf /mnt/ligandpro/db/LPCE/processed
 	rm -rf /mnt/ligandpro/db/LPCE/ligands
 	rm -rf /mnt/ligandpro/db/LPCE/bioml
-
 
 pre-commit:
 	pre-commit run --all-files

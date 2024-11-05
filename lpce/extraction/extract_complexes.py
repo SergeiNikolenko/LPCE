@@ -35,7 +35,7 @@ def extract_complexes(cfg) -> dict:
     rsync_host = cfg.rsync.host
 
     raw_dir.mkdir(parents=True, exist_ok=True)
-    logger.info("========== Extracting Complexes ==========")
+    logger.info("\n========== Extracting Complexes ==========")
 
     initial_count = count_structures(raw_dir)
     logger.info(f"Initial count of structures: {initial_count}")

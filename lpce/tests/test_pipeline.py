@@ -2,6 +2,7 @@ import shutil
 import sys
 import tempfile
 from pathlib import Path
+import argparse
 
 from hydra import compose, initialize
 from loguru import logger
@@ -9,7 +10,6 @@ from loguru import logger
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 import warnings
-
 from Bio import BiopythonDeprecationWarning
 from cleanup.filter_ligands import filter_ligands
 from cleanup.remove_dna_rna import remove_dna_rna_from_directory
@@ -31,12 +31,21 @@ from utils.utils import save_removed_files_to_json
 warnings.filterwarnings("ignore", category=BiopythonDeprecationWarning)
 
 
-def test_run_pipeline():
+def test_run_pipeline(config_name):
     with initialize(config_path="../config", version_base=None):
-        cfg = compose(config_name="config")
+        cfg = compose(config_name=config_name)
+
+    log_file_path = Path(cfg.logging.log_file_tests)
+    if log_file_path.exists():
+        log_file_path.unlink()
 
     logger.remove()
     logger.add(sys.stdout, format="{message}", level="INFO")
+    logger.add(
+        cfg.logging.log_file_tests,
+        format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {message}",
+        level="INFO",
+    )
 
     test_data_dir = Path("lpce/tests/test_data")
 
@@ -96,7 +105,7 @@ def test_run_pipeline():
         not_buried = remove_not_buried_ligands(test_cfg)
         add_h_to_ligands(test_cfg)
 
-        json_output_path = Path("../data/removed_files_tests.json")
+        json_output_path = Path("data/removed_files_tests.json")
         save_removed_files_to_json(
             dna_rna, models, unused, not_buried, json_output_path
         )
@@ -111,4 +120,11 @@ def test_run_pipeline():
 
 
 if __name__ == "__main__":
-    test_run_pipeline()
+    parser = argparse.ArgumentParser(description="Run the test pipeline with a specified config name.")
+    parser.add_argument(
+        "config_name",
+        type=str,
+        help="Name of the configuration file (without .yaml extension)"
+    )
+    args = parser.parse_args()
+    test_run_pipeline(args.config_name)

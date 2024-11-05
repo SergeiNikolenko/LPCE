@@ -96,7 +96,7 @@ def process_groups_with_resolution(identical_groups, pdb_directory):
                     continue
                 resolution = get_resolution_from_pdb(pdb_file_path)
                 if resolution is None:
-                    logger.warning(f"Resolution not found for {structure}")
+                    logger.debug(f"Resolution not found for {structure}")
                     continue
                 if best_resolution is None or resolution < best_resolution:
                     best_resolution = resolution
@@ -110,23 +110,36 @@ def process_groups_with_resolution(identical_groups, pdb_directory):
 
 
 def remove_similar_structures(cfg):
+    logger.info("\n========== Remove similar structures ==========")
+
     def load_identical_groups(cfg):
         with open(cfg.foldseek.identical_groups) as f:
             identical_groups_json_compatible = json.load(f)
         identical_groups = [set(group) for group in identical_groups_json_compatible]
-
         return identical_groups
 
     identical_groups = load_identical_groups(cfg)
-    initial_count = sum(len(group) for group in identical_groups)
-    final_groups = process_groups_with_resolution(
-        identical_groups, cfg.paths.separated_dir
-    )
+
+    files_in_groups = set()
+    for group in identical_groups:
+        files_in_groups.update(group)
+        
+    all_files = set()
+    for filename in os.listdir(cfg.paths.separated_dir):
+        if filename.endswith(".pdb"):
+            all_files.add(filename[:-4])  
+
+    files_not_in_groups = all_files - files_in_groups
+
+    initial_count = len(all_files)
+
+    final_groups = process_groups_with_resolution(identical_groups, cfg.paths.separated_dir)
 
     total_files = set()
     for group in final_groups:
-        # Add names with .pdb extension for correct file deletion
         total_files.update({file + ".pdb" for file in group})
+
+    total_files.update({file + ".pdb" for file in files_not_in_groups})
 
     final_count = len(total_files)
     deleted_files = 0
@@ -137,10 +150,9 @@ def remove_similar_structures(cfg):
             os.remove(file_path)
             deleted_files += 1
 
-    deleted_percentage = (deleted_files / (deleted_files + final_count)) * 100
-    logger.info("========== Remove similar structures completed ==========")
+    deleted_percentage = (deleted_files / initial_count) * 100
+
     logger.info(f"Initially there were {initial_count} structures.")
     logger.info(f"{final_count} unique structures remain.")
-    logger.info(
-        f"Deleted {deleted_files} files, which is {deleted_percentage:.2f}% of the total."
-    )
+    logger.info(f"Deleted {deleted_files} files, which is {deleted_percentage:.2f}% of the total.")
+

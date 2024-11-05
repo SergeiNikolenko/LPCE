@@ -66,7 +66,7 @@ def process_structures(output_dir, threshold=0.3, distance_cutoff=5.0, n_jobs=11
         file_path.unlink()
         removed_files.append(name)
 
-    logger.info("======== Removing not buried ligands ========")
+    logger.info("\n======== Removing not buried ligands ========")
     logger.info(f"Total buried ligands: {len(buried)}")
     logger.info(f"Total not buried ligands: {len(not_buried)}")
     logger.info(

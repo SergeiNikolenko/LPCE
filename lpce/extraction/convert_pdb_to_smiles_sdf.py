@@ -113,7 +113,7 @@ def convert_pdb_to_smiles_sdf(cfg: object) -> None:
     pdb_files = list(Path(cfg.paths.processed_dir).glob("*.pdb"))
     total_files = len(pdb_files)
 
-    logger.info("========== Converting PDB to SMILES and SDF ==========")
+    logger.info("\n========== Converting PDB to SMILES and SDF ==========")
     logger.info(
         f"Processing {total_files} PDB files from {Path(cfg.paths.processed_dir)}"
     )

@@ -491,7 +491,7 @@ def protein_ligand_separator(cfg):
     identity_threshold = cfg.separator_params.identity_threshold
     pdb_files = get_pdb_files(input_dir)
     total_files = len(pdb_files)
-    logger.info(f"Total PDB files found: {total_files}")
+    
 
     os.makedirs(output_dir, exist_ok=True)
 
@@ -513,8 +513,9 @@ def protein_ligand_separator(cfg):
     )
     total_structures_left = total_structures_saved - total_structures_skipped_similar
 
-    logger.info("========== Protein analysis completed ==========")
-    logger.info(f"Total PDB files processed: {total_files}")
-    logger.info(f"Total structures saved: {total_structures_saved}")
+    logger.info("\n========== Protein ligand separator completed ==========")
+    logger.info(f"Total PDB files found: {total_files}")
+
     logger.info(f"Total similar structures skipped: {total_structures_skipped_similar}")
     logger.info(f"Structures remaining after filtering: {total_structures_left}")
+    logger.info(f"Total structures SAVED: {total_structures_saved}")

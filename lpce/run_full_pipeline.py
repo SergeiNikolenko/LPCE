@@ -1,6 +1,7 @@
 import shutil
 import sys
 from pathlib import Path
+import argparse
 
 from cleanup.filter_ligands import filter_ligands
 from cleanup.remove_dna_rna import remove_dna_rna_from_directory
@@ -25,9 +26,10 @@ from utils.send_email import send_email_notification
 from utils.utils import save_removed_files_to_json
 
 
-def main():
-    with initialize(config_path="config", version_base=None):
-        cfg = compose(config_name="config")
+def main(config_name):
+    config_path = "config"
+    with initialize(config_path=config_path, version_base=None):
+        cfg = compose(config_name=config_name)
 
     logs_dir = Path("logs")
     if logs_dir.exists():
@@ -55,7 +57,7 @@ def main():
     unused = remove_unused_pdb_files(cfg)
     bioml_split(cfg)
     protein_ligand_separator(cfg)
-    send_email_notification(cfg)
+    
     clean_multiple_paths(cfg)
     find_duplicates_foldseek(cfg)
     remove_similar_structures(cfg)
@@ -65,6 +67,15 @@ def main():
     json_output_path = Path(cfg.output_files.removed_files_json)
     save_removed_files_to_json(dna_rna, models, unused, not_buried, json_output_path)
 
+    send_email_notification(cfg)
+
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description="Run the full pipeline with a specified config name.")
+    parser.add_argument(
+        "config_name",
+        type=str,
+        help="Name of the configuration file (without .yaml extension)"
+    )
+    args = parser.parse_args()
+    main(args.config_name)

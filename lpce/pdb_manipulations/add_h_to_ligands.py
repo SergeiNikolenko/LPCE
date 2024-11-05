@@ -18,6 +18,7 @@ def add_h_to_ligands(cfg) -> dict:
     output_path = Path(cfg.paths.separated_dir)
     output_path.mkdir(parents=True, exist_ok=True)
 
+    logger.info("\n========== Add hydrogens to ligands ==========")
     pdb_files = list(input_path.glob("*.pdb"))
     logger.info(f"Starting to add hydrogens to {len(pdb_files)} files")
 
