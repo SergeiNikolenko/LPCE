@@ -193,7 +193,6 @@ def find_duplicates_foldseek(cfg):
     with open(cfg.foldseek.identical_groups, "w") as f:
         json.dump(identical_groups_json_compatible, f)
 
-
     logger.info(
         f"Search completed. Found {len(identical_groups)} groups of identical structures."
     )

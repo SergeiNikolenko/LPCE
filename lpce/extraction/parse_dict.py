@@ -57,9 +57,6 @@ def process_single_file(pdb_file: Path) -> tuple:
     return pdb_id, parse_pdb_file(file_path)
 
 
-
-
-
 def extract_complexes_with_ligands(pdb_directory: Path, max_files: int = None) -> dict:
     """
     Extracts complexes with ligands from PDB files in a directory.

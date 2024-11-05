@@ -1,8 +1,8 @@
+import argparse
 import shutil
 import sys
 import tempfile
 from pathlib import Path
-import argparse
 
 from hydra import compose, initialize
 from loguru import logger
@@ -10,6 +10,7 @@ from loguru import logger
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 import warnings
+
 from Bio import BiopythonDeprecationWarning
 from cleanup.filter_ligands import filter_ligands
 from cleanup.remove_dna_rna import remove_dna_rna_from_directory
@@ -120,11 +121,13 @@ def test_run_pipeline(config_name):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Run the test pipeline with a specified config name.")
+    parser = argparse.ArgumentParser(
+        description="Run the test pipeline with a specified config name."
+    )
     parser.add_argument(
         "config_name",
         type=str,
-        help="Name of the configuration file (without .yaml extension)"
+        help="Name of the configuration file (without .yaml extension)",
     )
     args = parser.parse_args()
     test_run_pipeline(args.config_name)

@@ -225,6 +225,7 @@ def process_pdb_file_with_inclusion_check(pdb_file, output_dir):
         # logger.error(f"Error processing {pdb_file}: {e}")
         return [], [], []
 
+
 def bioml_split(cfg) -> dict:
     """
     Splits PDB files into biomolecules based on REMARK 350 information,
@@ -242,7 +243,7 @@ def bioml_split(cfg) -> dict:
 
     pdb_files = get_pdb_files(input_dir)
     total_files = len(pdb_files)
-    
+
     # Ensure output directory exists
     os.makedirs(output_dir, exist_ok=True)
 
@@ -260,7 +261,9 @@ def bioml_split(cfg) -> dict:
 
     # Collect results
     for unique_files, duplicates, inclusions in results:
-        total_biomolecules_created += len(unique_files) + len(duplicates) + len(inclusions)
+        total_biomolecules_created += (
+            len(unique_files) + len(duplicates) + len(inclusions)
+        )
         all_unique_files.extend(unique_files)
         all_duplicates.extend(duplicates)
         all_inclusions.extend(inclusions)

@@ -491,7 +491,6 @@ def protein_ligand_separator(cfg):
     identity_threshold = cfg.separator_params.identity_threshold
     pdb_files = get_pdb_files(input_dir)
     total_files = len(pdb_files)
-    
 
     os.makedirs(output_dir, exist_ok=True)
 

@@ -123,17 +123,19 @@ def remove_similar_structures(cfg):
     files_in_groups = set()
     for group in identical_groups:
         files_in_groups.update(group)
-        
+
     all_files = set()
     for filename in os.listdir(cfg.paths.separated_dir):
         if filename.endswith(".pdb"):
-            all_files.add(filename[:-4])  
+            all_files.add(filename[:-4])
 
     files_not_in_groups = all_files - files_in_groups
 
     initial_count = len(all_files)
 
-    final_groups = process_groups_with_resolution(identical_groups, cfg.paths.separated_dir)
+    final_groups = process_groups_with_resolution(
+        identical_groups, cfg.paths.separated_dir
+    )
 
     total_files = set()
     for group in final_groups:
@@ -154,5 +156,6 @@ def remove_similar_structures(cfg):
 
     logger.info(f"Initially there were {initial_count} structures.")
     logger.info(f"{final_count} unique structures remain.")
-    logger.info(f"Deleted {deleted_files} files, which is {deleted_percentage:.2f}% of the total.")
-
+    logger.info(
+        f"Deleted {deleted_files} files, which is {deleted_percentage:.2f}% of the total."
+    )

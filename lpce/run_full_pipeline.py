@@ -1,7 +1,7 @@
+import argparse
 import shutil
 import sys
 from pathlib import Path
-import argparse
 
 from cleanup.filter_ligands import filter_ligands
 from cleanup.remove_dna_rna import remove_dna_rna_from_directory
@@ -57,7 +57,7 @@ def main(config_name):
     unused = remove_unused_pdb_files(cfg)
     bioml_split(cfg)
     protein_ligand_separator(cfg)
-    
+
     clean_multiple_paths(cfg)
     find_duplicates_foldseek(cfg)
     remove_similar_structures(cfg)
@@ -71,11 +71,13 @@ def main(config_name):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Run the full pipeline with a specified config name.")
+    parser = argparse.ArgumentParser(
+        description="Run the full pipeline with a specified config name."
+    )
     parser.add_argument(
         "config_name",
         type=str,
-        help="Name of the configuration file (without .yaml extension)"
+        help="Name of the configuration file (without .yaml extension)",
     )
     args = parser.parse_args()
     main(args.config_name)
