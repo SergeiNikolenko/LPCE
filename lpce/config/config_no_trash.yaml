@@ -2,11 +2,11 @@ n_jobs: -1
 
 paths:
   raw_dir: /mnt/ligandpro/db/LPCE/raw/pdb
-  processed_dir: /mnt/ligandpro/db/LPCE/processed
-  ligands_dir: /mnt/ligandpro/db/LPCE/ligands
-  bioml_dir: /mnt/ligandpro/db/LPCE/bioml
-  separated_dir: /mnt/ligandpro/db/LPCE/separated
-  separated_fixed: /mnt/ligandpro/db/LPCE/separated_fixed
+  processed_dir: /mnt/ligandpro/db/LPCE_no_trash/processed
+  ligands_dir: /mnt/ligandpro/db/LPCE_no_trash/ligands
+  bioml_dir: /mnt/ligandpro/db/LPCE_no_trash/bioml
+  separated_dir: /mnt/ligandpro/db/LPCE_no_trash/separated
+  separated_fixed: /mnt/ligandpro/db/LPCE_no_trash/separated_fixed
 
 output_files:
   removed_files_json: data/removed_files.json
@@ -19,15 +19,15 @@ output_files:
   cleaned_complexes_json: data/cleaned_complexes.json
 
 junk_ligands:
-  threshold: 4
+  threshold: 4                # Distance to consider to save ligand.
 
 rsync:
   port: 33444
   host: rsync.rcsb.org
 
 logging:
-  log_file: logs/logfile.log
-  log_file_tests: logs/logfile_tests.log
+  log_file: logs/logfile_no_trash.log
+  log_file_tests: logs/logfile_tests_no_trash.log
 
 
 separator_params:
@@ -43,7 +43,7 @@ foldseek:
   identical_groups: data/identical_groups.json
   tmscore_threshold: 0.8       # TM-score threshold to consider structures as similar.
   fident_threshold: 0.8        # Identity threshold to consider structures as similar.
-  n_jobs: 112                  # Number of threads to use.
+  n_jobs: 16                   # Number of threads to use.
 
 email:
   user: ${oc.env:EMAIL_USER}

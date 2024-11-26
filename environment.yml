@@ -2,6 +2,7 @@ name: lpce
 channels:
   - defaults
   - conda-forge
+  - bioconda
 dependencies:
   - python=3.10
   - biopython
@@ -20,10 +21,11 @@ dependencies:
   - numpy
   - pre-commit
   - MDAnalysis
-  - mdakit-sasa
+  - hydra-core
+  - foldseek
+  - openbabel
   - pip:
     - python-dotenv
     - tqdm
     - pytest
-
     - chembl_structure_pipeline

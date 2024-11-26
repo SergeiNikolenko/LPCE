@@ -25,7 +25,7 @@ def parse_atom_line(line: str) -> tuple:
     return ligand_id, np.array([x, y, z])
 
 
-def remove_junk_ligands_from_file(input_file_path: Path, junk_ligands: set) -> dict:
+def remove_junk_ligands_from_file(input_file_path: Path, junk_ligands: set, cfg) -> dict:
     """
     Removes junk ligands from a PDB file if no other ligands are within a 3 Å radius.
 
@@ -42,7 +42,7 @@ def remove_junk_ligands_from_file(input_file_path: Path, junk_ligands: set) -> d
         ligands_to_remove = set()
         temp_file_path = input_file_path.with_suffix(".tmp")
         changes_made = False
-        threshold = 4.0
+        threshold = cfg.junk_ligands.threshold
 
         # Read the file and collect atoms
         with open(input_file_path) as f_in:
@@ -113,7 +113,7 @@ def remove_junk_ligands_from_directory(cfg) -> dict:
 
     # Parallel processing of files
     results = Parallel(n_jobs=cfg.n_jobs)(
-        delayed(remove_junk_ligands_from_file)(pdb_file, junk_ligands)
+        delayed(remove_junk_ligands_from_file)(pdb_file, junk_ligands, cfg)
         for pdb_file in tqdm(
             pdb_files, desc="Removing junk ligands", unit="file", total=total_files
         )

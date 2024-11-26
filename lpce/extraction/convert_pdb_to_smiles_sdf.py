@@ -104,6 +104,7 @@ def convert_pdb_to_smiles_sdf(cfg: object) -> None:
     Returns:
         None
     """
+    
     smiles_output_dir = Path(cfg.paths.ligands_dir) / "smiles"
     sdf_output_dir = Path(cfg.paths.ligands_dir) / "sdf"
 
