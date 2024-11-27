@@ -92,7 +92,7 @@ def process_groups_with_resolution(identical_groups, pdb_directory):
             for structure in structures:
                 pdb_file_path = os.path.join(pdb_directory, f"{structure}.pdb")
                 if not os.path.exists(pdb_file_path):
-                    logger.warning(f"File {pdb_file_path} not found.")
+                    logger.debug(f"File {pdb_file_path} not found.")
                     continue
                 resolution = get_resolution_from_pdb(pdb_file_path)
                 if resolution is None:

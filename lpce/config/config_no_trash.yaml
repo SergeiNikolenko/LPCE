@@ -6,7 +6,7 @@ paths:
   ligands_dir: /mnt/ligandpro/db/LPCE_no_trash/ligands
   bioml_dir: /mnt/ligandpro/db/LPCE_no_trash/bioml
   separated_dir: /mnt/ligandpro/db/LPCE_no_trash/separated
-  separated_fixed: /mnt/ligandpro/db/LPCE_no_trash/separated_fixed
+  final_dir: /mnt/ligandpro/db/LPCE_no_trash/final
 
 output_files:
   removed_files_json: data/removed_files.json
@@ -53,3 +53,9 @@ email:
 buried:
   buried_threshold: 0.3       # Threshold for buried ligands.
   buried_distance_cutoff: 5.0 # Distance cutoff for buried ligands.
+
+
+overlapping:
+  overlapping_threshold: 0.5   # Distance to consider ligands as overlapping.
+
+add_h_to_ligands: false

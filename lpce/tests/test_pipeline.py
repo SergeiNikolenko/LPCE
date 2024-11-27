@@ -26,6 +26,8 @@ from pdb_manipulations.protein_ligand_separator import protein_ligand_separator
 from pdb_manipulations.remove_not_buried_ligands import remove_not_buried_ligands
 from pdb_manipulations.remove_similar_structures import remove_similar_structures
 from pdb_manipulations.split_bioml import bioml_split
+from pdb_manipulations.clash_ligands import split_overlapping_ligands
+from pdb_manipulations.split2file import create_final_files
 from utils.clean_names import clean_multiple_paths
 from utils.utils import save_removed_files_to_json
 
@@ -62,6 +64,10 @@ def test_run_pipeline(config_name):
     if separated_path.exists():
         shutil.rmtree(separated_path)
 
+    final_path = Path("./lpce/tests/final")
+    if final_path.exists():
+        shutil.rmtree(final_path)
+
     with tempfile.TemporaryDirectory() as temp_dir:
         temp_path = Path(temp_dir)
         processed_dir = temp_path / "processed"
@@ -73,12 +79,15 @@ def test_run_pipeline(config_name):
         logs_dir = temp_path / "logs"
         logs_dir.mkdir(parents=True, exist_ok=True)
 
+        final_dir = temp_path / "final"
+        final_dir.mkdir(parents=True, exist_ok=True)
+
         test_cfg = cfg.copy()
         test_cfg.paths.processed_dir = str(processed_dir)
         test_cfg.paths.bioml_dir = str(temp_path / "bioml")
         test_cfg.paths.ligands_dir = str(temp_path / "ligands")
         test_cfg.paths.separated_dir = str(temp_path / "separated")
-        test_cfg.paths.separated_fixed = str(temp_path / "separated_fixed")
+        test_cfg.paths.final_dir = str(temp_path / "final")
         test_cfg.logging.log_file = str(logs_dir / "foldseek.log")
 
         shutil.copytree(test_data_dir, processed_dir, dirs_exist_ok=True)
@@ -104,7 +113,10 @@ def test_run_pipeline(config_name):
         find_duplicates_foldseek(test_cfg)
         remove_similar_structures(test_cfg)
         not_buried = remove_not_buried_ligands(test_cfg)
+        split_overlapping_ligands(test_cfg)
         add_h_to_ligands(test_cfg)
+        create_final_files(test_cfg)
+
 
         json_output_path = Path("data/removed_files_tests.json")
         save_removed_files_to_json(
@@ -115,6 +127,9 @@ def test_run_pipeline(config_name):
         shutil.copytree(test_cfg.paths.bioml_dir, bioml_path, dirs_exist_ok=True)
         shutil.copytree(
             test_cfg.paths.separated_dir, separated_path, dirs_exist_ok=True
+        )
+        shutil.copytree(
+            test_cfg.paths.final_dir, final_path, dirs_exist_ok=True
         )
 
         logger.info("DONE! Test pipeline completed successfully")

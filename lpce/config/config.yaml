@@ -6,7 +6,7 @@ paths:
   ligands_dir: /mnt/ligandpro/db/LPCE/ligands
   bioml_dir: /mnt/ligandpro/db/LPCE/bioml
   separated_dir: /mnt/ligandpro/db/LPCE/separated
-  separated_fixed: /mnt/ligandpro/db/LPCE/separated_fixed
+  final_dir: /mnt/ligandpro/db/LPCE/final
 
 output_files:
   removed_files_json: data/removed_files.json
@@ -32,9 +32,10 @@ logging:
 
 separator_params:
   interact_distance: 4.5       # Distance to consider an atom as interacting.
-  ligand_ligand_distance: 4    # Distance to consider ligands as part of the same group.
+  ligand_ligand_distance: 0.5  # (4 angstrom) distance to consider ligands as part of the same group.
   rmsd_threshold: 2.0          # RMSD threshold to consider structures as similar.
   identity_threshold: 0.98     # Identity threshold to consider structures as similar.
+
 
 foldseek:
   foldseek_log: logs/foldseek.log
@@ -53,3 +54,9 @@ email:
 buried:
   buried_threshold: 0.3       # Threshold for buried ligands.
   buried_distance_cutoff: 5.0 # Distance cutoff for buried ligands.
+
+
+overlapping:
+  overlapping_threshold: 0.5   # Distance to consider ligands as overlapping.
+
+add_h_to_ligands: false

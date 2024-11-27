@@ -7,9 +7,8 @@ logs/
 lpce/tests/processed/*
 lpce/tests/separated/*
 lpce/tests/bioml/*
-lpce/tests/test_data/*
 lpce/tests/separated_fixed/*
-
+lpce/tests/final/*
 data/filtered_ligands.json
 data/site_info.json
 data/grouped_complexes.json

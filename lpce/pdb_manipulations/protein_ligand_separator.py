@@ -183,7 +183,6 @@ def find_close_ligands(ligand_atoms, all_ligand_atoms, distance):
                 close_residues.add(residue)
     return list(close_residues)
 
-
 def save_structure_to_tempfile(structure, select):
     io = PDBIO()
     temp_file = tempfile.NamedTemporaryFile(suffix=".pdb", delete=False)
@@ -191,7 +190,6 @@ def save_structure_to_tempfile(structure, select):
     io.save(temp_file.name, select=select)
     temp_file.close()
     return temp_file.name
-
 
 def process_ligands(structure, interact_distance=4.5, ligand_ligand_distance=3.0):
     all_ligand_atoms = [

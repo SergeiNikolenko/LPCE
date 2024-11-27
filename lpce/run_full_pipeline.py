@@ -21,6 +21,8 @@ from pdb_manipulations.protein_ligand_separator import protein_ligand_separator
 from pdb_manipulations.remove_not_buried_ligands import remove_not_buried_ligands
 from pdb_manipulations.remove_similar_structures import remove_similar_structures
 from pdb_manipulations.split_bioml import bioml_split
+from pdb_manipulations.clash_ligands import split_overlapping_ligands
+from pdb_manipulations.split2file import create_final_files
 from utils.clean_names import clean_multiple_paths
 from utils.send_email import send_email_notification
 from utils.utils import save_removed_files_to_json
@@ -62,7 +64,9 @@ def main(config_name):
     find_duplicates_foldseek(cfg)
     remove_similar_structures(cfg)
     not_buried = remove_not_buried_ligands(cfg)
+    split_overlapping_ligands(cfg)
     add_h_to_ligands(cfg)
+    create_final_files(cfg)
 
     json_output_path = Path(cfg.output_files.removed_files_json)
     save_removed_files_to_json(dna_rna, models, unused, not_buried, json_output_path)

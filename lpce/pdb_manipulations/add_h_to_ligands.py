@@ -1,6 +1,5 @@
 import subprocess
 from pathlib import Path
-
 from joblib import Parallel, delayed
 from loguru import logger
 from tqdm import tqdm
@@ -14,6 +13,10 @@ def add_hydrogens_with_babel(input_file, output_file):
 
 
 def add_h_to_ligands(cfg) -> dict:
+    if not cfg.add_h_to_ligands:
+        logger.info("Skipping hydrogen addition as per configuration")
+        return {"status": "skipped", "message": "Hydrogen addition disabled in config"}
+    
     input_path = Path(cfg.paths.separated_dir)
     output_path = Path(cfg.paths.separated_dir)
     output_path.mkdir(parents=True, exist_ok=True)
@@ -28,3 +31,4 @@ def add_h_to_ligands(cfg) -> dict:
     )
 
     logger.info("Done!")
+    return {"status": "completed", "processed_files": len(pdb_files)}
