@@ -39,12 +39,12 @@ separator_params:
 
 foldseek:
   foldseek_log: logs/foldseek.log
-  foldseek_path: /home/nikolenko/miniforge3/envs/lpce/bin/foldseek
+  foldseek_path: /home/nikolenko/miniforge/envs/lpce/bin/foldseek
   prostt5_path: /home/nikolenko/work/soft/prostt5_model
   identical_groups: data/identical_groups.json
   tmscore_threshold: 0.8       # TM-score threshold to consider structures as similar.
   fident_threshold: 0.8        # Identity threshold to consider structures as similar.
-  n_jobs: 112                  # Number of threads to use.
+  n_jobs: 96                   # Number of threads to use.
 
 email:
   user: ${oc.env:EMAIL_USER}
