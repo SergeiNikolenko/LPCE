@@ -1,6 +1,6 @@
 .PHONY: all run_pipeline test tests pre-commit clean tmux
 
-CONFIG_NAME ?= config
+CONFIG_NAME ?= config_no_trash
 
 all: clean tests_success clean run_pipeline end
 
@@ -37,9 +37,6 @@ clean:
 	rm -rf /mnt/ligandpro/db/LPCE/ligands
 	rm -rf /mnt/ligandpro/db/LPCE/bioml
 	rm -rf /mnt/ligandpro/db/LPCE/separated
-
-	rm -rf logs
-	mkdir -p logs
 
 	rm -rf data/identical_groups.json
 	rm -rf data/filtered_ligands.json

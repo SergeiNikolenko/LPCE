@@ -2,11 +2,11 @@ n_jobs: -1
 
 paths:
   raw_dir: /mnt/ligandpro/db/LPCE/raw/pdb
-  processed_dir: /mnt/ligandpro/db/LPCE_trash_mini/processed
-  ligands_dir: /mnt/ligandpro/db/LPCE_trash_mini/ligands
-  bioml_dir: /mnt/ligandpro/db/LPCE_trash_mini/bioml
-  separated_dir: /mnt/ligandpro/db/LPCE_trash_mini/separated
-  final_dir: /mnt/ligandpro/db/LPCE_trash_mini/final
+  processed_dir: /mnt/ligandpro/db/LPCE/with_mini_trash_list/processed
+  ligands_dir: /mnt/ligandpro/db/LPCE/with_mini_trash_list/ligands
+  bioml_dir: /mnt/ligandpro/db/LPCE/with_mini_trash_list/bioml
+  separated_dir: /mnt/ligandpro/db/LPCE/with_mini_trash_list/separated
+  final_dir: /mnt/ligandpro/db/LPCE/with_mini_trash_list/final
 
 output_files:
   removed_files_json: data/removed_files.json
@@ -38,7 +38,7 @@ separator_params:
 
 foldseek:
   foldseek_log: logs/foldseek_mini.log
-  foldseek_path: /home/nikolenko/miniforge3/envs/lpce/bin/foldseek
+  foldseek_path: /home/nikolenko/miniforge/envs/lpce/bin/foldseek
   prostt5_path: /home/nikolenko/work/soft/prostt5_model
   identical_groups: data/identical_groups.json
   tmscore_threshold: 0.8       # TM-score threshold to consider structures as similar.

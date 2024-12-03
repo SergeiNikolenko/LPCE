@@ -2,11 +2,11 @@ n_jobs: -1
 
 paths:
   raw_dir: /mnt/ligandpro/db/LPCE/raw/pdb
-  processed_dir: /mnt/ligandpro/db/LPCE/processed
-  ligands_dir: /mnt/ligandpro/db/LPCE/ligands
-  bioml_dir: /mnt/ligandpro/db/LPCE/bioml
-  separated_dir: /mnt/ligandpro/db/LPCE/separated
-  final_dir: /mnt/ligandpro/db/LPCE/final
+  processed_dir: /mnt/ligandpro/db/LPCE/with_trash_list/processed
+  ligands_dir: /mnt/ligandpro/db/LPCE/with_trash_list/ligands
+  bioml_dir: /mnt/ligandpro/db/LPCE/with_trash_list/bioml
+  separated_dir: /mnt/ligandpro/db/LPCE/with_trash_list/separated
+  final_dir: /mnt/ligandpro/db/LPCE/with_trash_list/final
 
 output_files:
   removed_files_json: data/removed_files.json
