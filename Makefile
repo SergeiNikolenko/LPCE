@@ -38,8 +38,15 @@ clean:
 	rm -rf /mnt/ligandpro/db/LPCE/bioml
 	rm -rf /mnt/ligandpro/db/LPCE/separated
 
-	rm -rf logs
-	mkdir -p logs
+	rm -rf /mnt/ligandpro/db/LPCE/with_mini_trash_list/processed
+	rm -rf /mnt/ligandpro/db/LPCE/with_mini_trash_list/ligands
+	rm -rf /mnt/ligandpro/db/LPCE/with_mini_trash_list/bioml
+	rm -rf /mnt/ligandpro/db/LPCE/with_mini_trash_list/separated
+
+	rm -rf /mnt/ligandpro/db/LPCE/no_trash_list/processed
+	rm -rf /mnt/ligandpro/db/LPCE/no_trash_list/ligands
+	rm -rf /mnt/ligandpro/db/LPCE/no_trash_list/bioml
+	rm -rf /mnt/ligandpro/db/LPCE/no_trash_list/separated
 
 	rm -rf data/identical_groups.json
 	rm -rf data/filtered_ligands.json
