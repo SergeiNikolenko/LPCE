@@ -28,4 +28,5 @@ dependencies:
     - python-dotenv
     - tqdm
     - pytest
+    - tqdm_joblib
     - chembl_structure_pipeline

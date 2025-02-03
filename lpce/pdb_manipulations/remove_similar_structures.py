@@ -5,17 +5,26 @@ from collections import defaultdict
 from loguru import logger
 
 
-def extract_het_and_chain_identifiers(filename):
+def extract_het_and_chain_identifiers(filename: str) -> tuple[str, str] | tuple[None, None]:
     try:
-        start_het = filename.index("bioml_1_") + len("bioml_1_")
-        end_het = filename.index("_chains_")
-        het_identifier = filename[start_het:end_het]
+        chain_tag = "_chains_"
+        processed_tag = "_processed"
+        
+        start_bioml = filename.index("bioml_") + len("bioml_")
 
-        start_chain = end_het + len("_chains_")
-        end_chain = filename.index("_processed", start_chain)
-        chain_identifier = filename[start_chain:end_chain]
+        pos_underscore = filename.index('_', start_bioml)
 
-        return het_identifier, chain_identifier
+        start_ligand = pos_underscore + 1
+        
+        chain_start = filename.index(chain_tag, start_ligand)
+        ligand_part = filename[start_ligand:chain_start]
+        #logger.info(f"ligand_part: {ligand_part}")
+
+        chain_identifier_start = chain_start + len(chain_tag)
+        processed_pos = filename.index(processed_tag, chain_identifier_start)
+        chain_identifier = filename[chain_identifier_start:processed_pos]
+        
+        return (ligand_part, chain_identifier)
     except ValueError:
         return None, None
 

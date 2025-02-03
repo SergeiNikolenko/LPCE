@@ -39,7 +39,7 @@ separator_params:
 
 foldseek:
   foldseek_log: logs/foldseek.log
-  foldseek_path: /home/nikolenko/miniforge3/envs/lpce/bin/foldseek
+  foldseek_path: /home/nikolenko/work/ligandpro/soft/protein/foldseek/bin/foldseek
   prostt5_path: /home/nikolenko/work/soft/prostt5_model
   identical_groups: data/identical_groups.json
   tmscore_threshold: 0.8       # TM-score threshold to consider structures as similar.
@@ -59,4 +59,4 @@ buried:
 overlapping:
   overlapping_threshold: 0.5   # Distance to consider ligands as overlapping.
 
-add_h_to_ligands: false
+add_h_to_ligands: true

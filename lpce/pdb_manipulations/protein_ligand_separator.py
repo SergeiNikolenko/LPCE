@@ -294,7 +294,6 @@ def save_pocket_structure(
     ligand_names = "_".join(sorted({ligand.get_resname() for ligand in ligands}))
     chains_str = "_".join(sorted(interacting_chains))
 
-    # Добавляем суффикс `_processed` к имени файла
     output_file = (
         output_dir
         / f"{input_filename}_{ligand_names}_chains_{chains_str}_processed.pdb"
