@@ -71,7 +71,7 @@ def main(config_name):
     json_output_path = Path(cfg.output_files.removed_files_json)
     save_removed_files_to_json(dna_rna, models, unused, not_buried, json_output_path)
 
-    send_email_notification(cfg)
+    #send_email_notification(cfg)
 
 
 if __name__ == "__main__":

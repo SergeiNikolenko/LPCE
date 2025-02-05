@@ -1,6 +1,6 @@
 .PHONY: all run_pipeline test tests pre-commit clean tmux
 
-CONFIG_NAME ?= config
+CONFIG_NAME ?= config_trash_mini
 
 all: clean tests_success clean run_pipeline end
 

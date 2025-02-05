@@ -3,6 +3,7 @@ __pycache__/
 tmp*
 .pytest_cache/
 *.parquet
+data_*
 logs/
 lpce/tests/processed/*
 lpce/tests/separated/*

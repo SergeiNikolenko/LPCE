@@ -1,4 +1,4 @@
-n_jobs: -1
+n_jobs: 54
 
 paths:
   raw_dir: /mnt/ligandpro/db/LPCE/raw/pdb
@@ -32,13 +32,13 @@ logging:
 
 separator_params:
   interact_distance: 4.5       # Distance to consider an atom as interacting.
-  ligand_ligand_distance: 4    # Distance to consider ligands as part of the same group.
+  ligand_ligand_distance: 0.5  # Distance to consider ligands as part of the same group.
   rmsd_threshold: 2.0          # RMSD threshold to consider structures as similar.
   identity_threshold: 0.98     # Identity threshold to consider structures as similar.
 
 foldseek:
   foldseek_log: logs/foldseek_mini.log
-  foldseek_path: /home/nikolenko/miniforge3/envs/lpce/bin/foldseek
+  foldseek_path: /home/nikolenko/work/soft/foldseek/bin/foldseek
   prostt5_path: /home/nikolenko/work/soft/prostt5_model
   identical_groups: data/identical_groups.json
   tmscore_threshold: 0.8       # TM-score threshold to consider structures as similar.
