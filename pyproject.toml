@@ -1,0 +1,36 @@
+[project]
+name = "lpce"
+version = "0.1.0"
+description = "Ligand-protein complex extraction"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "biopython>=1.85",
+    "hydra-core>=1.3.2",
+    "joblib>=1.4.2",
+    "loguru>=0.7.3",
+    "pre-commit>=4.2.0",
+    "pytest>=8.3.5",
+    "tqdm>=4.67.1",
+    "yagmail>=0.15.293",
+]
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["lpce"]
+
+[tool.black]
+line-length = 88
+target-version = ['py311']
+include = '\.pyi?$'
+
+[tool.isort]
+profile = "black"
+line_length = 88
+multi_line_output = 3
+include_trailing_comma = true
+use_parentheses = true
+ensure_newline_before_comments = true

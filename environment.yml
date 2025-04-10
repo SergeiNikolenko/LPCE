@@ -1,0 +1,32 @@
+name: lpce
+channels:
+  - defaults
+  - conda-forge
+  - bioconda
+dependencies:
+  - python=3.10
+  - biopython
+  - tqdm
+  - joblib
+  - yagmail
+  - rsync
+  - pathlib
+  - pip
+  - datamol
+  - pyarrow
+  - ipykernel
+  - fastparquet
+  - mols2grid
+  - pandarallel
+  - numpy
+  - pre-commit
+  - MDAnalysis
+  - hydra-core
+  - foldseek
+  - openbabel
+  - pip:
+    - python-dotenv
+    - tqdm
+    - pytest
+    - tqdm_joblib
+    - chembl_structure_pipeline
