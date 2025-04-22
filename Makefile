@@ -8,7 +8,7 @@ UV := $(VENV_BIN)/uv
 
 venv:
 	@echo "Creating virtual environment..."
-	@test -d $(VENV_DIR) || uv venv $(VENV_DIR)
+	@test -d $(VENV_DIR) || $(UV) venv $(VENV_DIR)
 	@$(UV) pip install -e .
 
 install: venv

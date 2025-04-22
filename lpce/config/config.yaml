@@ -33,8 +33,8 @@ logging:
 
 separator_params:
   interact_distance: 4.5       # Distance to consider an atom as interacting.
-  ligand_ligand_distance: 0.5  # (4 angstrom) distance to consider ligands as part of the same group.
-  rmsd_threshold: 2.0          # RMSD threshold to consider structures as similar.
+  ligand_ligand_distance: 1    # (4 angstrom) distance to consider ligands as part of the same group.
+  rmsd_threshold: 0            # RMSD threshold to consider structures as similar.
   identity_threshold: 0.98     # Identity threshold to consider structures as similar.
 
 
