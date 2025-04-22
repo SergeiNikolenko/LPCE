@@ -1,40 +1,27 @@
-.PHONY: all run_pipeline test tests pre-commit clean tmux venv install dev
+.PHONY: all run_pipeline test tests pre-commit clean tmux
 
 CONFIG_NAME ?= config
-VENV_DIR := .venv
-VENV_BIN := $(VENV_DIR)/bin
-PYTHON := $(VENV_BIN)/python
-UV := $(VENV_BIN)/uv
 
-venv:
-	@echo "Creating virtual environment..."
-	@test -d $(VENV_DIR) || $(UV) venv $(VENV_DIR)
-	@$(UV) pip install -e .
 
-install: venv
-
-dev: venv
-	@$(UV) pip install -e ".[dev]"
-
-all: venv clean tests_success clean run_pipeline clean end
+all: clean tests_success clean run_pipeline clean end
 
 tmux:
 	@tmux new-session -d -s lpce "make all CONFIG_FILE=$(CONFIG_NAME)"
 	@tmux attach -t lpce
 
-run_pipeline: venv
+run_pipeline:
 	clear
-	$(PYTHON) lpce/run_full_pipeline.py $(CONFIG_NAME)
+	python lpce/run_full_pipeline.py $(CONFIG_NAME)
 
-test: venv
+test:
 	clear
-	$(PYTHON) lpce/tests/test_pipeline.py $(CONFIG_NAME)
+	python lpce/tests/test_pipeline.py $(CONFIG_NAME)
 
-tests: venv
+tests:
 	clear
-	export JUPYTER_PLATFORM_DIRS=1 && $(PYTHON) -m pytest lpce/tests/ --config-name=$(CONFIG_NAME)
+	export JUPYTER_PLATFORM_DIRS=1 && python -m pytest lpce/tests/ --config-name=$(CONFIG_NAME)
 
-tests_success: venv
+tests_success:
 	@echo "Running tests..."
 	@if $(MAKE) tests; then \
 		echo "Tests passed! Proceeding with the rest of the pipeline..."; \
