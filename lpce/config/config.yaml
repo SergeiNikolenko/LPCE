@@ -33,18 +33,20 @@ logging:
 
 separator_params:
   interact_distance: 4.5       # Distance to consider an atom as interacting.
-  ligand_ligand_distance: 1    # (4 angstrom) distance to consider ligands as part of the same group.
-  rmsd_threshold: 0            # RMSD threshold to consider structures as similar.
-  identity_threshold: 0.98     # Identity threshold to consider structures as similar.
-
+  ligand_ligand_distance: 1.5  # (4 angstrom) distance to consider ligands as part of the same group.
+  rmsd_threshold: 2.0          # RMSD threshold to consider structures as similar.
+  default_bond_distance: 1.5   # Default bond distance for ligands.
+  short_pep: 8                 # Length threshold to consider a peptide as short.
+  lig_rmsd_thr: 1.0            # RMSD threshold to consider ligands as similar.
+  overlap_distance: 0.6        # Distance to consider ligands as overlapping.
 
 foldseek:
   foldseek_log: logs/foldseek.log
   foldseek_path: /home/nikolenko/work/ligandpro/soft/protein/foldseek/bin/foldseek
   prostt5_path: /home/nikolenko/work/soft/prostt5_model
   identical_groups: data/identical_groups.json
-  tmscore_threshold: 0.8       # TM-score threshold to consider structures as similar.
-  fident_threshold: 0.8        # Identity threshold to consider structures as similar.
+  tmscore_threshold: 0.98       # TM-score threshold to consider structures as similar.
+  fident_threshold: 0.98        # Identity threshold to consider structures as similar.
   n_jobs: 112                  # Number of threads to use.
 
 email:

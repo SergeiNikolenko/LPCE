@@ -20,3 +20,5 @@ lpce.egg-info/
 .DS_Store
 .ruff_cache/
 .mypy_cache/
+*.tmp
+notebook/test/*

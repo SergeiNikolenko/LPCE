@@ -3,7 +3,7 @@
 CONFIG_NAME ?= config
 
 
-all: clean tests_success clean run_pipeline clean end
+all: clean tests_success clean run_pipeline end
 
 tmux:
 	@tmux new-session -d -s lpce "make all CONFIG_FILE=$(CONFIG_NAME)"
@@ -50,7 +50,7 @@ clean:
 	rm -rf data/removed_files_tests.json
 
 end:
-	rm -rf /mnt/ligandpro/db/LPCE/raw
+
 	rm -rf /mnt/ligandpro/db/LPCE/processed
 	rm -rf /mnt/ligandpro/db/LPCE/ligands
 	rm -rf /mnt/ligandpro/db/LPCE/bioml

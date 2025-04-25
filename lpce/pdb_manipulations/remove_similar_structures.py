@@ -1,172 +1,184 @@
 import json
-import os
+import math
+import numpy as np
 from collections import defaultdict
-
 from loguru import logger
+from pathlib import Path
 
+def parse_ligands_from_pdb(pdb_file: Path):
+    ligands = {}
+    with pdb_file.open() as f:
+        for line in f:
+            if line.startswith("HETATM"):
+                resn = line[17:20].strip()
+                if resn == "HOH":
+                    continue
+                x = float(line[30:38])
+                y = float(line[38:46])
+                z = float(line[46:54])
+                ligands.setdefault(resn, []).append((x, y, z))
+    return ligands
 
-def extract_het_and_chain_identifiers(
-    filename: str,
-) -> tuple[str, str] | tuple[None, None]:
+def compute_rmsd(coords1, coords2):
+    if len(coords1) != len(coords2):
+        return float('inf')
+    arr1 = np.array(coords1)
+    arr2 = np.array(coords2)
+    diff = arr1 - arr2
+    return math.sqrt(np.mean(np.sum(diff * diff, axis=1)))
+
+def are_ligands_same(pdbA: Path, pdbB: Path, ligand_rmsd_thr=1.0):
+    a = parse_ligands_from_pdb(pdbA)
+    b = parse_ligands_from_pdb(pdbB)
+    if set(a.keys()) != set(b.keys()):
+        return False
+    for lig_name in a:
+        coordsA = a[lig_name]
+        coordsB = b[lig_name]
+        rmsd_val = compute_rmsd(coordsA, coordsB)
+        if rmsd_val > ligand_rmsd_thr:
+            return False
+    return True
+
+def refine_groups_by_ligands(identical_groups, pdb_dir: Path, ligand_rmsd_thr=1.0):
+    refined = []
+    for group in identical_groups:
+        items = sorted(group)
+        subgroups = []
+        for pdb_name in items:
+            placed = False
+            pdb_file = pdb_dir / f"{pdb_name}.pdb"
+            if not pdb_file.exists():
+                continue
+            for sg in subgroups:
+                rep = next(iter(sg))
+                rep_file = pdb_dir / f"{rep}.pdb"
+                if are_ligands_same(pdb_file, rep_file, ligand_rmsd_thr):
+                    sg.add(pdb_name)
+                    placed = True
+                    break
+            if not placed:
+                subgroups.append({pdb_name})
+        refined.extend(subgroups)
+    return refined
+
+def extract_het_and_chain_identifiers(filename: str):
+    chain_tag = "_chains_"
+    processed_tag = "_processed"
     try:
-        chain_tag = "_chains_"
-        processed_tag = "_processed"
-
         start_bioml = filename.index("bioml_") + len("bioml_")
-
         pos_underscore = filename.index("_", start_bioml)
-
         start_ligand = pos_underscore + 1
-
         chain_start = filename.index(chain_tag, start_ligand)
         ligand_part = filename[start_ligand:chain_start]
-        # logger.info(f"ligand_part: {ligand_part}")
-
         chain_identifier_start = chain_start + len(chain_tag)
         processed_pos = filename.index(processed_tag, chain_identifier_start)
         chain_identifier = filename[chain_identifier_start:processed_pos]
-
         return (ligand_part, chain_identifier)
     except ValueError:
         return None, None
 
-
-def get_resolution_from_pdb(pdb_file_path):
+def get_resolution_from_pdb(pdb_file: Path):
     try:
-        with open(pdb_file_path) as f:
+        with pdb_file.open() as f:
             for line in f:
                 if line.startswith("REMARK   2 RESOLUTION."):
                     parts = line.strip().split()
                     for i, part in enumerate(parts):
                         if "ANGSTROM" in part.upper():
                             try:
-                                resolution = float(parts[i - 1])
-                                return resolution
+                                return float(parts[i - 1])
                             except ValueError:
-                                # logger.warning(f"Unable to convert resolution to float for {pdb_file_path}")
                                 return None
-                    resolution_str = line.strip().split("RESOLUTION.")[-1].split()[0]
+                    val = line.strip().split("RESOLUTION.")[-1].split()[0]
                     try:
-                        resolution = float(resolution_str)
-                        return resolution
+                        return float(val)
                     except ValueError:
-                        # logger.warning(f"Unable to convert resolution to float for {pdb_file_path}")
                         return None
         return None
     except Exception as e:
-        logger.error(f"Error reading resolution from {pdb_file_path}: {e}")
+        logger.error(f"Error reading resolution from {pdb_file}: {e}")
         return None
-
 
 def remove_duplicate_groups(groups):
     unique_groups = []
-    groups_sorted = sorted(
-        [sorted(group) for group in groups], key=lambda x: (-len(x), x)
-    )
-
+    groups_sorted = sorted([sorted(g) for g in groups], key=lambda x: (-len(x), x))
     for group in groups_sorted:
         group_set = set(group)
         is_subset = False
-        for unique_group in unique_groups:
-            if group_set <= unique_group:
+        for uniq in unique_groups:
+            if group_set <= uniq:
                 is_subset = True
                 break
         if not is_subset:
             unique_groups.append(group_set)
     return unique_groups
 
-
-def process_groups_with_resolution(identical_groups, pdb_directory):
+def process_groups_with_resolution(identical_groups, pdb_dir: Path):
     processed_groups = []
     for group in identical_groups:
-        processed_group = {
-            file_name.split("_processed")[0] + "_processed" for file_name in group
-        }
-        processed_groups.append(processed_group)
-
+        short = {f.split("_processed")[0] + "_processed" for f in group}
+        processed_groups.append(short)
     unique_groups = remove_duplicate_groups(processed_groups)
     final_groups = []
-
     for group in unique_groups:
-        het_chain_groups = defaultdict(list)
+        hc_groups = defaultdict(list)
         for file_name in group:
-            het_identifier, chain_identifier = extract_het_and_chain_identifiers(
-                file_name
-            )
-            key = (het_identifier, chain_identifier)
-            het_chain_groups[key].append(file_name)
-
-        selected_structures = []
-        for key, structures in het_chain_groups.items():
-            best_structure = None
-            best_resolution = None
-            for structure in structures:
-                pdb_file_path = os.path.join(pdb_directory, f"{structure}.pdb")
-                if not os.path.exists(pdb_file_path):
-                    logger.debug(f"File {pdb_file_path} not found.")
+            hetID, chainID = extract_het_and_chain_identifiers(file_name)
+            hc_groups[(hetID, chainID)].append(file_name)
+        chosen = []
+        for _, items in hc_groups.items():
+            best_struc = None
+            best_resol = None
+            for structure in items:
+                pdb_file = pdb_dir / f"{structure}.pdb"
+                if not pdb_file.exists():
+                    logger.debug(f"File {pdb_file} not found.")
                     continue
-                resolution = get_resolution_from_pdb(pdb_file_path)
-                if resolution is None:
+                reso = get_resolution_from_pdb(pdb_file)
+                if reso is None:
                     logger.debug(f"Resolution not found for {structure}")
                     continue
-                if best_resolution is None or resolution < best_resolution:
-                    best_resolution = resolution
-                    best_structure = structure
-            if best_structure:
-                selected_structures.append(best_structure)
+                if best_resol is None or reso < best_resol:
+                    best_resol = reso
+                    best_struc = structure
+            if best_struc:
+                chosen.append(best_struc)
             else:
-                selected_structures.append(structures[0])
-        final_groups.append(set(selected_structures))
+                chosen.append(items[0])
+        final_groups.append(set(chosen))
     return final_groups
-
 
 def remove_similar_structures(cfg):
     logger.info("\n========== Remove similar structures ==========")
 
-    def load_identical_groups(cfg):
-        with open(cfg.foldseek.identical_groups) as f:
-            identical_groups_json_compatible = json.load(f)
-        identical_groups = [set(group) for group in identical_groups_json_compatible]
-        return identical_groups
+    with open(cfg.foldseek.identical_groups) as f:
+        data = json.load(f)
+    identical_groups = [set(g) for g in data]
 
-    identical_groups = load_identical_groups(cfg)
+    pdb_dir = Path(cfg.paths.separated_dir)
+    all_files = {p.stem for p in pdb_dir.glob("*.pdb")}
 
-    files_in_groups = set()
-    for group in identical_groups:
-        files_in_groups.update(group)
+    refined = refine_groups_by_ligands(identical_groups, pdb_dir, ligand_rmsd_thr=1.0)
+    final_groups = process_groups_with_resolution(refined, pdb_dir)
 
-    all_files = set()
-    for filename in os.listdir(cfg.paths.separated_dir):
-        if filename.endswith(".pdb"):
-            all_files.add(filename[:-4])
+    in_groups = set()
+    for grp in final_groups:
+        in_groups |= {f"{x}.pdb" for x in grp}
 
-    files_not_in_groups = all_files - files_in_groups
-
+    # Anything that never appeared in Foldseek is also kept
+    never_foldseek = {f"{x}.pdb" for x in (all_files - set().union(*identical_groups))}
+    keep_files = in_groups | never_foldseek
     initial_count = len(all_files)
-
-    final_groups = process_groups_with_resolution(
-        identical_groups, cfg.paths.separated_dir
-    )
-
-    total_files = set()
-    for group in final_groups:
-        total_files.update({file + ".pdb" for file in group})
-
-    total_files.update({file + ".pdb" for file in files_not_in_groups})
-
-    final_count = len(total_files)
     deleted_files = 0
 
-    for filename in os.listdir(cfg.paths.separated_dir):
-        file_path = os.path.join(cfg.paths.separated_dir, filename)
-        if filename.endswith(".pdb") and filename not in total_files:
-            os.remove(file_path)
+    for item in pdb_dir.glob("*.pdb"):
+        if item.name not in keep_files:
+            item.unlink()
             deleted_files += 1
 
-    deleted_percentage = (deleted_files / initial_count) * 100
-
-    logger.info(f"Initially there were {initial_count} structures.")
-    logger.info(f"{final_count} unique structures remain.")
-    logger.info(
-        f"Deleted {deleted_files} files, which is {deleted_percentage:.2f}% of the total."
-    )
+    final_count = initial_count - deleted_files
+    perc = (deleted_files / initial_count) * 100
+    logger.info(f"Initially {initial_count} PDB.")
+    logger.info(f"{final_count} remain.")
+    logger.info(f"Deleted {deleted_files} ({perc:.2f}%).")
