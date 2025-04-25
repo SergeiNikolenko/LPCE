@@ -27,7 +27,7 @@ def main(config_name):
     config_path = "config"
     with initialize(config_path=config_path, version_base=None):
         cfg = compose(config_name=config_name)
-
+    
     logs_dir = Path("logs")
     if logs_dir.exists():
         shutil.rmtree(logs_dir)
@@ -51,6 +51,7 @@ def main(config_name):
     remove_water_from_directory(cfg)
 
     remove_junk_ligands_from_directory(cfg)
+    
     # convert_pdb_to_smiles_sdf(cfg)
     # extract_and_save_complexes_with_ligands(cfg)
     # filter_ligands(cfg)
@@ -60,7 +61,7 @@ def main(config_name):
     protein_ligand_separator(cfg)
 
     clean_multiple_paths(cfg)
-    # find_duplicates_foldseek(cfg)
+    find_duplicates_foldseek(cfg)
     # remove_similar_structures(cfg)
     not_buried = remove_not_buried_ligands(cfg)
     split_overlapping_ligands(cfg)

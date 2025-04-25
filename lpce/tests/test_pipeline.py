@@ -40,20 +40,13 @@ def run_pipeline_steps(test_cfg: dict[str, Any]) -> list[str]:
     models = remove_multiple_models_from_directory(test_cfg)
 
     remove_water_from_directory(test_cfg)
-
     remove_junk_ligands_from_directory(test_cfg)
-    # convert_pdb_to_smiles_sdf(test_cfg)
-    # extract_and_save_complexes_with_ligands(test_cfg)
-    # filter_ligands(test_cfg)
-    # unused = remove_unused_pdb_files(test_cfg)
+
     unused = {"removed_files": []}
 
     bioml_split(test_cfg)
-
     protein_ligand_separator(test_cfg)
     clean_multiple_paths(test_cfg)
-    # find_duplicates_foldseek(test_cfg)
-    # remove_similar_structures(test_cfg)
     not_buried = remove_not_buried_ligands(test_cfg)
     split_overlapping_ligands(test_cfg)
     add_h_to_ligands(test_cfg)
@@ -106,16 +99,15 @@ def test_run_pipeline(config_name: str) -> None:
         logger.info("DONE! Test pipeline completed successfully")
 
 
-if __name__ == "__main__":
-    import argparse
+import rich_click as click
 
-    parser = argparse.ArgumentParser(
-        description="Run the test pipeline with a specified config name."
-    )
-    parser.add_argument(
-        "config_name",
-        type=str,
-        help="Name of the configuration file (without .yaml extension)",
-    )
-    args = parser.parse_args()
-    test_run_pipeline(args.config_name)
+
+@click.command(context_settings={"help_option_names": ["-h", "--help"]})
+@click.argument("config_name", type=str)
+def cli(config_name: str) -> None:
+    """Run the test pipeline"""
+    test_run_pipeline(config_name)
+
+
+if __name__ == "__main__":
+    cli()

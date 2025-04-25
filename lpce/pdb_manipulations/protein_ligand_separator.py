@@ -1,5 +1,20 @@
-import re
-import sys
+import sys, re
+
+class _SilentStream:
+    _pat = re.compile(
+        r"(Undo has been disabled|Reason: Memory exceeded|"
+        r"Failed to find the pandas get_adjustment\(\) function to patch|"
+        r"Failed to patch pandas|Matrix: Warning: no convergence|"
+        r"A worker stopped while some jobs were given to the executor)"
+    )
+    def __init__(self, stream): self._s = stream
+    def write(self, txt):
+        if not self._pat.search(txt): self._s.write(txt)
+    def flush(self): self._s.flush()
+
+sys.stdout = _SilentStream(sys.stdout)
+sys.stderr = _SilentStream(sys.stderr)
+
 import tempfile
 import threading
 import uuid
@@ -15,9 +30,26 @@ from pymol import cmd
 from rdkit import Chem
 from spyrmsd import graph, molecule
 
+import datamol as dm
+from rdkit import RDLogger
+
+dm.disable_rdkit_log()
+import logging
+logging.getLogger("rdkit").setLevel(logging.ERROR)
+logging.getLogger("rdkit.Chem.PandasTools").setLevel(logging.CRITICAL)
+RDLogger.DisableLog("rdApp.*")
+
 warnings.filterwarnings(
     "ignore", category=UserWarning, module="MDAnalysis.core.universe"
 )
+
+warnings.filterwarnings(
+    "ignore", category=UserWarning, module="MDAnalysis.core.universe"
+)
+warnings.filterwarnings(
+    "ignore", message="Disconnected graph detected.*", module="spyrmsd.graphs.rx"
+)
+RDLogger.DisableLog("rdApp.*")
 
 logger.remove()
 logger.add(sys.stdout, format="{message}", level="DEBUG")
@@ -89,12 +121,15 @@ class _PymolSession:
         with cls._lock:
             if not cls._started:
                 pymol.finish_launching(["pymol", "-qc"])
+                cmd.feedback("disable", "all", "everything")
+                cmd.feedback("disable", "undo", "warnings")
                 cls._started = True
 
     @classmethod
     def locked(cls):
         cls.ensure()
         return cls._lock
+
 
 
 def _ligands_connected(r1, r2, default_bond_distance):
@@ -144,8 +179,10 @@ def _rmsd_on_ligand(pdb1: str, pdb2: str) -> float:
         _dump(o1, t1.name)
         _dump(o2, t2.name)
 
-        m1 = Chem.MolFromPDBFile(t1.name, removeHs=False)
-        m2 = Chem.MolFromPDBFile(t2.name, removeHs=False)
+        with dm.without_rdkit_log():
+            m1 = dm.read_pdbfile(t1.name)
+            m2 = dm.read_pdbfile(t2.name)
+
         t1.close()
         t2.close()
         if not m1 or not m2:
@@ -369,13 +406,20 @@ import copy
 
 
 def _unique_name(base, taken):
-    if base not in taken:
-        return base
-    for i in range(1, 100):
-        cand = (base[:3] + str(i))[:4]
+    import string
+    base = base.strip().upper()[:2]
+    pool = string.ascii_uppercase + string.digits
+    for s in pool:
+        cand = (base + s).ljust(4)[:4]
         if cand not in taken:
             return cand
+    for s1 in pool:
+        for s2 in pool:
+            cand = (base + s1 + s2)[:4]
+            if cand not in taken:
+                return cand
     raise ValueError("too many duplicates")
+
 
 
 class _MergedSelect(Select):
@@ -428,7 +472,11 @@ class PocketWriter:
         main = residues[0]
         main.resname = "LIG"
         taken = {a.get_name() for a in main.get_atoms()}
+        
         for r in residues[1:]:
+            if r is main:
+                continue
+            
             for at in list(r.get_atoms()):
                 c = copy.copy(at)
                 nn = _unique_name(at.name.strip(), taken)
@@ -436,8 +484,12 @@ class PocketWriter:
                 c.fullname = f"{nn:>4}"
                 taken.add(nn)
                 main.add(c)
-            r.get_parent().detach_child(r.id)
+            
+            parent = r.get_parent()
+            if parent is not None:
+                parent.detach_child(r.id)
         return main
+
 
     def save(self, structure, pocket, out_dir, extra_lines, pdb_basename):
         lig_raw = [r for r in pocket.ligands if r.get_resname() != "HOH"]
@@ -668,8 +720,11 @@ class ProteinAnalyzer:
 
         saved = 0
         for p in pockets:
-            if self.writer.save(structure, p, out_dir, extra, pdb_filepath.stem):
-                saved += 1
+            try:
+                if self.writer.save(structure, p, out_dir, extra, pdb_filepath.stem):
+                    saved += 1
+            except Exception as e:
+                logger.exception(f"Error processing {pdb_filepath}: {e}")
 
         return {"saved": saved, "skipped": self.writer.skipped}
 
