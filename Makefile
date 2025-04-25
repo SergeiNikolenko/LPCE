@@ -55,5 +55,5 @@ end:
 	rm -rf /mnt/ligandpro/db/LPCE/ligands
 	rm -rf /mnt/ligandpro/db/LPCE/bioml
 
-pre-commit: venv
-	$(VENV_BIN)/pre-commit run --all-files
+pre-commit:
+	pre-commit run --all-files

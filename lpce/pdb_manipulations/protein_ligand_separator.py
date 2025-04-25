@@ -1,24 +1,23 @@
+import re
 import sys
-import warnings
 import tempfile
 import threading
 import uuid
+import warnings
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Set, Tuple
-import re
-import numpy as np
 
-from Bio.PDB.Polypeptide import standard_aa_names
-from Bio.PDB import PDBParser, NeighborSearch, Select, PDBIO
-from loguru import logger
+import numpy as np
 import pymol
+from Bio.PDB import PDBIO, NeighborSearch, PDBParser, Select
+from loguru import logger
 from pymol import cmd
 from rdkit import Chem
+from spyrmsd import graph, molecule
 
-from spyrmsd import graph, molecule, qcp
-
-warnings.filterwarnings("ignore", category=UserWarning, module="MDAnalysis.core.universe")
+warnings.filterwarnings(
+    "ignore", category=UserWarning, module="MDAnalysis.core.universe"
+)
 
 logger.remove()
 logger.add(sys.stdout, format="{message}", level="DEBUG")
@@ -58,6 +57,7 @@ BOND_LENGTHS = {
 
 METALS = {"Fe", "Zn", "Cu", "Ni", "Mn", "Co", "Mg", "Ca", "Mo", "Na", "K"}
 
+
 def _get_bond_threshold(el1, el2, default_bond_distance):
     pair = (el1, el2)
     if pair in BOND_LENGTHS:
@@ -66,6 +66,7 @@ def _get_bond_threshold(el1, el2, default_bond_distance):
     if rev in BOND_LENGTHS:
         return BOND_LENGTHS[rev]
     return default_bond_distance
+
 
 def _elem(atom) -> str:
     e = getattr(atom, "element", "").strip()
@@ -77,6 +78,7 @@ def _elem(atom) -> str:
         return name[0].upper()
     s = m.group(1).upper()
     return s.capitalize()
+
 
 class _PymolSession:
     _lock = threading.Lock()
@@ -102,12 +104,13 @@ def _ligands_connected(r1, r2, default_bond_distance):
             el2 = _elem(a2)
             thr = _get_bond_threshold(el1, el2, default_bond_distance)
             dist = np.linalg.norm(a1.coord - a2.coord)
-            #logger.debug(f"_ligands_connected: Checking {r1.get_resname()}-{r2.get_resname()} : "
+            # logger.debug(f"_ligands_connected: Checking {r1.get_resname()}-{r2.get_resname()} : "
             #             f"{a1.get_name()}-{a2.get_name()}, dist={dist:.3f}, thr={thr}")
             if dist <= thr:
-                #logger.debug(f"_ligands_connected: FOUND BOND between {r1.get_resname()} and {r2.get_resname()}")
+                # logger.debug(f"_ligands_connected: FOUND BOND between {r1.get_resname()} and {r2.get_resname()}")
                 return True
     return False
+
 
 def _rmsd_on_ca(pdb1: str, pdb2: str) -> float:
     with _PymolSession.locked():
@@ -149,7 +152,7 @@ def _rmsd_on_ligand(pdb1: str, pdb2: str) -> float:
             logger.debug("    ligand RMSD -> RDKit build failed (m1 or m2 is None)")
             cmd.delete("all")
             return float("inf")
-        
+
         try:
             if not m1:
                 logger.debug("MolFromPDBFile failed, skipping RMSD")
@@ -157,7 +160,7 @@ def _rmsd_on_ligand(pdb1: str, pdb2: str) -> float:
         except Exception as e:
             logger.debug(f"Exception {e}, skipping ligand RMSD")
             return float("inf")
-        
+
         try:
             if not m2:
                 logger.debug("MolFromPDBFile failed, skipping RMSD")
@@ -166,15 +169,22 @@ def _rmsd_on_ligand(pdb1: str, pdb2: str) -> float:
             logger.debug(f"Exception {e}, skipping ligand RMSD")
             return float("inf")
 
-        c1 = np.array([a.coord for a in cmd.get_model(o1 + " and hetatm and not resn HOH").atom])
-        c2 = np.array([a.coord for a in cmd.get_model(o2 + " and hetatm and not resn HOH").atom])
+        c1 = np.array(
+            [a.coord for a in cmd.get_model(o1 + " and hetatm and not resn HOH").atom]
+        )
+        c2 = np.array(
+            [a.coord for a in cmd.get_model(o2 + " and hetatm and not resn HOH").atom]
+        )
 
         try:
             mol1 = molecule.Molecule.from_rdkit(m1)
             mol2 = molecule.Molecule.from_rdkit(m2)
-            G1 = graph.graph_from_adjacency_matrix(mol1.adjacency_matrix, mol1.atomicnums)
-            G2 = graph.graph_from_adjacency_matrix(mol2.adjacency_matrix, mol2.atomicnums)
-
+            G1 = graph.graph_from_adjacency_matrix(
+                mol1.adjacency_matrix, mol1.atomicnums
+            )
+            G2 = graph.graph_from_adjacency_matrix(
+                mol2.adjacency_matrix, mol2.atomicnums
+            )
 
             for idx1, idx2 in graph.match_graphs(G1, G2):
                 r = np.sqrt(np.mean((c1[idx1] - c2[idx2]) ** 2))
@@ -195,7 +205,9 @@ class _LigandPocketSelect(Select):
         self._chains = chains
 
     def accept_chain(self, chain):
-        return chain.id in self._chains or any(chain.id == cid for cid, _ in self._ligand_ids)
+        return chain.id in self._chains or any(
+            chain.id == cid for cid, _ in self._ligand_ids
+        )
 
     def accept_residue(self, residue):
         cid = residue.get_parent().id
@@ -204,28 +216,33 @@ class _LigandPocketSelect(Select):
 
 @dataclass
 class Pocket:
-    ligands: List
-    chains: Set[str]
+    ligands: list
+    chains: set[str]
     bond_type: str
 
 
 class LigandPocketExtractor:
-
-    def __init__(self, interact_d=4.5, ligand_cluster_d=1.5, default_bond_d=1.5, short_peptide=10):
+    def __init__(
+        self, interact_d=4.5, ligand_cluster_d=1.5, default_bond_d=1.5, short_peptide=10
+    ):
         self.interact_d = interact_d
         self.default_bond_d = default_bond_d
         self.short_peptide = short_peptide
         self.ligand_cluster_d = max(ligand_cluster_d, default_bond_d)
-        self._search_radius = max(self.ligand_cluster_d, max(BOND_LENGTHS.values(), default=0.0))
+        self._search_radius = max(
+            self.ligand_cluster_d, max(BOND_LENGTHS.values(), default=0.0)
+        )
 
     @staticmethod
     def _chains_near(lig_atoms, prot_atoms, d):
         if not prot_atoms:
             return set()
         ns = NeighborSearch(prot_atoms)
-        return {a.get_parent().get_parent().id
-                for la in lig_atoms
-                for a in ns.search(la.coord, d, level="A")}
+        return {
+            a.get_parent().get_parent().id
+            for la in lig_atoms
+            for a in ns.search(la.coord, d, level="A")
+        }
 
     @staticmethod
     def _save_temp(structure, selector):
@@ -254,7 +271,6 @@ class LigandPocketExtractor:
         p_ns = NeighborSearch(prot_atoms)
         all_ns = NeighborSearch(prot_atoms + lig_atoms)
 
-
         for la in lig_atoms:
             for pa in all_ns.search(la.coord, 3.0, level="A"):
                 if pa is la:
@@ -264,9 +280,8 @@ class LigandPocketExtractor:
                     if bt == "coord":
                         return "coord"
 
-
         for la in lig_atoms:
-            for pa in p_ns.search(la.coord, 3.0, level="A"): 
+            for pa in p_ns.search(la.coord, 3.0, level="A"):
                 bt = self._check_bond_type(la, pa)
                 if bt == "cov":
                     return "cov"
@@ -282,16 +297,25 @@ class LigandPocketExtractor:
         for r in structure.get_residues():
             chain_res.setdefault(r.get_parent().id, []).append(r)
 
-        protein_chains = {cid for cid, res in chain_res.items()
-                          if sum(1 for r in res if r.id[0] == " ") > self.short_peptide}
+        protein_chains = {
+            cid
+            for cid, res in chain_res.items()
+            if sum(1 for r in res if r.id[0] == " ") > self.short_peptide
+        }
 
-        prot_atoms = [a for a in structure.get_atoms()
-                      if a.get_parent().id[0] == " "
-                      and a.get_parent().get_parent().id in protein_chains]
+        prot_atoms = [
+            a
+            for a in structure.get_atoms()
+            if a.get_parent().id[0] == " "
+            and a.get_parent().get_parent().id in protein_chains
+        ]
 
-        candidates = [r for r in structure.get_residues()
-                      if (r.id[0] != " " and r.get_resname() != "HOH")
-                      or len(chain_res[r.get_parent().id]) <= self.short_peptide]
+        candidates = [
+            r
+            for r in structure.get_residues()
+            if (r.id[0] != " " and r.get_resname() != "HOH")
+            or len(chain_res[r.get_parent().id]) <= self.short_peptide
+        ]
 
         if not candidates:
             logger.debug("extract: no candidate residues found — skip")
@@ -341,8 +365,8 @@ class LigandPocketExtractor:
         return pockets
 
 
-
 import copy
+
 
 def _unique_name(base, taken):
     if base not in taken:
@@ -353,34 +377,45 @@ def _unique_name(base, taken):
             return cand
     raise ValueError("too many duplicates")
 
+
 class _MergedSelect(Select):
     def __init__(self, ligands, chains):
         self._ligands = set(ligands)
         self._chains = chains
+
     def accept_chain(self, chain):
-        return chain.id in self._chains or any(r.get_parent() is chain for r in self._ligands)
+        return chain.id in self._chains or any(
+            r.get_parent() is chain for r in self._ligands
+        )
+
     def accept_residue(self, residue):
         if residue in self._ligands:
             return True
         return residue.get_parent().id in self._chains and residue.id[0] == " "
 
+
 class PocketWriter:
-    def __init__(self,
-                 rmsd_thr=2.0,
-                 lig_rmsd_thr=0.5,
-                 ligand_cluster_distance=3.0,
-                 default_bond_distance=1.5):
+    def __init__(
+        self,
+        rmsd_thr=2.0,
+        lig_rmsd_thr=0.5,
+        ligand_cluster_distance=3.0,
+        default_bond_distance=1.5,
+    ):
         self.rmsd_thr = rmsd_thr
         self.lig_rmsd_thr = lig_rmsd_thr
         self.ligand_cluster_distance = ligand_cluster_distance
         self.default_bond_distance = default_bond_distance
         self._saved = []
-        self._skipped = 0      
+        self._skipped = 0
 
     def _is_duplicate(self, new_tmp, lig_resnames, new_chains):
         new_names = set(lig_resnames)
         for s in self._saved:
-            if s["chains"] != new_chains and _rmsd_on_ca(s["tmp"], new_tmp) >= self.rmsd_thr:
+            if (
+                s["chains"] != new_chains
+                and _rmsd_on_ca(s["tmp"], new_tmp) >= self.rmsd_thr
+            ):
                 continue
             if new_names != set(s["ligand_res"]):
                 continue
@@ -407,21 +442,26 @@ class PocketWriter:
     def save(self, structure, pocket, out_dir, extra_lines, pdb_basename):
         lig_raw = [r for r in pocket.ligands if r.get_resname() != "HOH"]
         if not lig_raw:
-            return False   
+            return False
 
         parent = list(range(len(lig_raw)))
+
         def find(i):
             while parent[i] != i:
                 parent[i] = parent[parent[i]]
                 i = parent[i]
             return i
+
         def union(i, j):
             pi, pj = find(i), find(j)
             if pi != pj:
                 parent[pj] = pi
+
         for i in range(len(lig_raw)):
             for j in range(i + 1, len(lig_raw)):
-                if _ligands_connected(lig_raw[i], lig_raw[j], self.default_bond_distance):
+                if _ligands_connected(
+                    lig_raw[i], lig_raw[j], self.default_bond_distance
+                ):
                     union(i, j)
 
         comps = {}
@@ -442,7 +482,9 @@ class PocketWriter:
 
         pocket.ligands = merged_ligs
 
-        file_lig_code = "_".join(sorted(group_names)) if len(group_names) > 1 else group_names[0]
+        file_lig_code = (
+            "_".join(sorted(group_names)) if len(group_names) > 1 else group_names[0]
+        )
         chains_code = "_".join(sorted(pocket.chains))
         parts = [pdb_basename, file_lig_code, "chains", chains_code]
         if pocket.bond_type:
@@ -459,9 +501,8 @@ class PocketWriter:
         tmp = LigandPocketExtractor._save_temp(structure, selector)
         if self._is_duplicate(tmp, group_names, pocket.chains):
             Path(tmp).unlink(missing_ok=True)
-            self._skipped += 1            
-            return False             
-
+            self._skipped += 1
+            return False
 
         io = PDBIO()
         io.set_structure(structure)
@@ -470,17 +511,21 @@ class PocketWriter:
             io.save(fh, select=selector)
             fh.write("\n")
 
-        self._saved.append({"output": out_path,
-                            "tmp": tmp,
-                            "ligand_res": group_names,
-                            "chains": pocket.chains})
+        self._saved.append(
+            {
+                "output": out_path,
+                "tmp": tmp,
+                "ligand_res": group_names,
+                "chains": pocket.chains,
+            }
+        )
         logger.debug(f"Saved: {out_path}")
-        return True  
-
+        return True
 
     @property
     def skipped(self):
         return self._skipped
+
 
 class ProteinAnalyzer:
     def __init__(
@@ -518,7 +563,9 @@ class ProteinAnalyzer:
         other = []
         with open(pdb_filepath) as fh:
             for line in fh:
-                if not line.startswith(("ATOM", "HETATM", "END", "MASTER", "TER", "CONECT", "ANISOU")):
+                if not line.startswith(
+                    ("ATOM", "HETATM", "END", "MASTER", "TER", "CONECT", "ANISOU")
+                ):
                     other.append(line)
         return other
 
@@ -535,7 +582,6 @@ class ProteinAnalyzer:
         return np.min(np.linalg.norm(a1[:, None, :] - a2[None, :, :], axis=-1))
 
     def _split_overlapping(self, pocket, prot_atoms):
-
         ligs = [r for r in pocket.ligands if r.get_resname() != "HOH"]
         if len(ligs) < 2:
             return [pocket]
@@ -549,11 +595,20 @@ class ProteinAnalyzer:
         if not overlapped:
             return [pocket]
 
-        others = [r for r in ligs if all((ligs.index(r), k) not in overlapped and
-                                        (k, ligs.index(r)) not in overlapped for k in range(len(ligs)))]
+        others = [
+            r
+            for r in ligs
+            if all(
+                (ligs.index(r), k) not in overlapped
+                and (k, ligs.index(r)) not in overlapped
+                for k in range(len(ligs))
+            )
+        ]
 
         pockets = []
-        for lig in {ligs[i] for i, _ in overlapped}.union({ligs[j] for _, j in overlapped}):
+        for lig in {ligs[i] for i, _ in overlapped}.union(
+            {ligs[j] for _, j in overlapped}
+        ):
             lig_atoms = [a for a in lig.get_atoms()]
             btype = self.extractor._get_pocket_bond_type(lig_atoms, prot_atoms)
             pockets.append(Pocket([lig] + others, pocket.chains, btype))
@@ -572,14 +627,20 @@ class ProteinAnalyzer:
         if not abundant:
             return pockets
         rare_pockets = [
-            p for p in pockets
-            if not {r.get_resname() for r in p.ligands if r.get_resname() != "HOH"}.issubset(abundant)
+            p
+            for p in pockets
+            if not {
+                r.get_resname() for r in p.ligands if r.get_resname() != "HOH"
+            }.issubset(abundant)
         ]
         kept, removed = [], 0
         for p in pockets:
             names = {r.get_resname() for r in p.ligands if r.get_resname() != "HOH"}
             if names and names.issubset(abundant):
-                close_to_rare = any(self._pocket_min_dist(p, rp) < self.protect_distance for rp in rare_pockets)
+                close_to_rare = any(
+                    self._pocket_min_dist(p, rp) < self.protect_distance
+                    for rp in rare_pockets
+                )
                 if not close_to_rare:
                     removed += 1
                     continue
@@ -637,13 +698,15 @@ def analyze_protein(
 
 
 from pathlib import Path
+
 from joblib import Parallel, delayed
-from tqdm import tqdm
 from loguru import logger
+from tqdm import tqdm
 
 
 def get_pdb_files(input_dir: Path):
     return list(input_dir.glob("*.pdb"))
+
 
 def _run_single(pdb_file: Path, output_dir: Path, params: dict):
     result = analyze_protein(
@@ -664,7 +727,6 @@ def _run_single(pdb_file: Path, output_dir: Path, params: dict):
 
 
 def protein_ligand_separator(cfg):
-
     logger.info("\n========== Protein ligand separator==========")
     input_dir = Path(cfg.paths.bioml_dir)
     output_dir = Path(cfg.paths.separated_dir)
@@ -674,9 +736,15 @@ def protein_ligand_separator(cfg):
         "interaction_distance": cfg.separator_params.interact_distance,
         "ligand_cluster_distance": cfg.separator_params.ligand_ligand_distance,
         "rmsd_threshold": cfg.separator_params.rmsd_threshold,
-        "default_bond_distance": getattr(cfg.separator_params, "default_bond_distance", 1.5),
-        "short_peptide_length": getattr(cfg.separator_params, "short_peptide_length", 8),
-        "ligand_rmsd_threshold": getattr(cfg.separator_params, "ligand_rmsd_threshold", 1.0),
+        "default_bond_distance": getattr(
+            cfg.separator_params, "default_bond_distance", 1.5
+        ),
+        "short_peptide_length": getattr(
+            cfg.separator_params, "short_peptide_length", 8
+        ),
+        "ligand_rmsd_threshold": getattr(
+            cfg.separator_params, "ligand_rmsd_threshold", 1.0
+        ),
         "overlap_distance": getattr(cfg.separator_params, "overlap_distance", 0.6),
     }
 
@@ -694,4 +762,3 @@ def protein_ligand_separator(cfg):
     total_skipped = sum(r["structures_skipped_similar"] for r in results)
     logger.info(f"Total similar structures skipped: {total_skipped}")
     logger.info(f"Total structures SAVED: {total_saved}")
-

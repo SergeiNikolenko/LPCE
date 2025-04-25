@@ -9,25 +9,17 @@ from hydra import compose, initialize
 from loguru import logger
 
 from lpce.cleanup import (
-    filter_ligands,
     remove_dna_rna_from_directory,
     remove_junk_ligands_from_directory,
     remove_multiple_models_from_directory,
-    remove_unused_pdb_files,
     remove_water_from_directory,
-)
-from lpce.extraction import (
-    convert_pdb_to_smiles_sdf,
-    extract_and_save_complexes_with_ligands,
 )
 from lpce.pdb_manipulations import (
     add_h_to_ligands,
     bioml_split,
     create_final_files,
-    find_duplicates_foldseek,
     protein_ligand_separator,
     remove_not_buried_ligands,
-    remove_similar_structures,
     split_overlapping_ligands,
 )
 from lpce.utils import (
@@ -50,18 +42,18 @@ def run_pipeline_steps(test_cfg: dict[str, Any]) -> list[str]:
     remove_water_from_directory(test_cfg)
 
     remove_junk_ligands_from_directory(test_cfg)
-    #convert_pdb_to_smiles_sdf(test_cfg)
-    #extract_and_save_complexes_with_ligands(test_cfg)
-    #filter_ligands(test_cfg)
-    #unused = remove_unused_pdb_files(test_cfg)
+    # convert_pdb_to_smiles_sdf(test_cfg)
+    # extract_and_save_complexes_with_ligands(test_cfg)
+    # filter_ligands(test_cfg)
+    # unused = remove_unused_pdb_files(test_cfg)
     unused = {"removed_files": []}
 
     bioml_split(test_cfg)
 
     protein_ligand_separator(test_cfg)
     clean_multiple_paths(test_cfg)
-    #find_duplicates_foldseek(test_cfg)
-    #remove_similar_structures(test_cfg)
+    # find_duplicates_foldseek(test_cfg)
+    # remove_similar_structures(test_cfg)
     not_buried = remove_not_buried_ligands(test_cfg)
     split_overlapping_ligands(test_cfg)
     add_h_to_ligands(test_cfg)

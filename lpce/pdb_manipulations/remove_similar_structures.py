@@ -1,9 +1,11 @@
 import json
 import math
-import numpy as np
 from collections import defaultdict
-from loguru import logger
 from pathlib import Path
+
+import numpy as np
+from loguru import logger
+
 
 def parse_ligands_from_pdb(pdb_file: Path):
     ligands = {}
@@ -19,13 +21,15 @@ def parse_ligands_from_pdb(pdb_file: Path):
                 ligands.setdefault(resn, []).append((x, y, z))
     return ligands
 
+
 def compute_rmsd(coords1, coords2):
     if len(coords1) != len(coords2):
-        return float('inf')
+        return float("inf")
     arr1 = np.array(coords1)
     arr2 = np.array(coords2)
     diff = arr1 - arr2
     return math.sqrt(np.mean(np.sum(diff * diff, axis=1)))
+
 
 def are_ligands_same(pdbA: Path, pdbB: Path, ligand_rmsd_thr=1.0):
     a = parse_ligands_from_pdb(pdbA)
@@ -39,6 +43,7 @@ def are_ligands_same(pdbA: Path, pdbB: Path, ligand_rmsd_thr=1.0):
         if rmsd_val > ligand_rmsd_thr:
             return False
     return True
+
 
 def refine_groups_by_ligands(identical_groups, pdb_dir: Path, ligand_rmsd_thr=1.0):
     refined = []
@@ -62,6 +67,7 @@ def refine_groups_by_ligands(identical_groups, pdb_dir: Path, ligand_rmsd_thr=1.
         refined.extend(subgroups)
     return refined
 
+
 def extract_het_and_chain_identifiers(filename: str):
     chain_tag = "_chains_"
     processed_tag = "_processed"
@@ -77,6 +83,7 @@ def extract_het_and_chain_identifiers(filename: str):
         return (ligand_part, chain_identifier)
     except ValueError:
         return None, None
+
 
 def get_resolution_from_pdb(pdb_file: Path):
     try:
@@ -100,6 +107,7 @@ def get_resolution_from_pdb(pdb_file: Path):
         logger.error(f"Error reading resolution from {pdb_file}: {e}")
         return None
 
+
 def remove_duplicate_groups(groups):
     unique_groups = []
     groups_sorted = sorted([sorted(g) for g in groups], key=lambda x: (-len(x), x))
@@ -113,6 +121,7 @@ def remove_duplicate_groups(groups):
         if not is_subset:
             unique_groups.append(group_set)
     return unique_groups
+
 
 def process_groups_with_resolution(identical_groups, pdb_dir: Path):
     processed_groups = []
@@ -148,6 +157,7 @@ def process_groups_with_resolution(identical_groups, pdb_dir: Path):
                 chosen.append(items[0])
         final_groups.append(set(chosen))
     return final_groups
+
 
 def remove_similar_structures(cfg):
     logger.info("\n========== Remove similar structures ==========")
