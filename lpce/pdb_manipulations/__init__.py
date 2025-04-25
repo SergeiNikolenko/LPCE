@@ -1,5 +1,5 @@
 from .add_h_to_ligands import add_h_to_ligands
-from .clash_ligands import split_overlapping_ligands
+from .clash_ligands import split_overlapping_ligands, split_overlapping_ligands_in_file
 from .foldseek import find_duplicates_foldseek
 from .protein_ligand_separator import protein_ligand_separator
 from .remove_not_buried_ligands import remove_not_buried_ligands
@@ -16,4 +16,5 @@ __all__ = [
     "bioml_split",
     "split_overlapping_ligands",
     "create_final_files",
+    "split_overlapping_ligands_in_file",
 ]

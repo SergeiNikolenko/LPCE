@@ -1,0 +1,286 @@
+import os
+import sys
+import tempfile
+import warnings
+from pathlib import Path
+
+from Bio.PDB import NeighborSearch, PDBParser, Select, PDBIO
+from joblib import Parallel, delayed
+from loguru import logger
+from tqdm import tqdm
+import pymol
+from pymol import cmd
+
+pymol.finish_launching(['pymol', '-qc'])
+
+warnings.filterwarnings("ignore", category=UserWarning, module="MDAnalysis.core.universe")
+
+logger.remove()
+logger.add(sys.stdout, format="{message}", level="INFO")
+
+
+class LigandSelect(Select):
+    def __init__(self, ligand_residues, interacting_chains):
+        self.ligand_residues = ligand_residues
+        self.interacting_chains = interacting_chains
+        self.ligand_ids = {(r.get_parent().id, r.id) for r in ligand_residues}
+
+    def accept_chain(self, chain):
+        return chain.id in self.interacting_chains or any(
+            chain.id == r.get_parent().id for r in self.ligand_residues
+        )
+
+    def accept_residue(self, residue):
+        cid = residue.get_parent().id
+        if (cid, residue.id) in self.ligand_ids:
+            return True
+        return residue.id[0] == " "
+
+
+def calculate_rmsd_pymol(file1: str, file2: str) -> float:
+    cmd.delete("all")
+    cmd.load(file1, "s1")
+    cmd.load(file2, "s2")
+    rmsd = cmd.align("s1 and name CA", "s2 and name CA")[0]
+    cmd.delete("all")
+    return rmsd
+
+
+def get_interacting_chains(ligand_atoms, protein_atoms, distance):
+    if not protein_atoms:
+        return set()
+    ns = NeighborSearch(protein_atoms)
+    interacting_atoms = []
+    for atom in ligand_atoms:
+        interacting_atoms.extend(ns.search(atom.coord, distance, level="A"))
+    return {a.get_parent().get_parent().id for a in interacting_atoms}
+
+
+def find_close_ligands(ligand_atoms, all_ligand_atoms, distance):
+    ns = NeighborSearch(all_ligand_atoms)
+    close = set()
+    for atom in ligand_atoms:
+        for near in ns.search(atom.coord, distance, level="A"):
+            res = near.get_parent()
+            if res not in ligand_atoms and res.id[0] != " ":
+                close.add(res)
+    return list(close)
+
+
+def save_structure_to_tempfile(structure, select):
+    io = PDBIO()
+    tmp = tempfile.NamedTemporaryFile(suffix=".pdb", delete=False)
+    io.set_structure(structure)
+    io.save(tmp.name, select=select)
+    tmp.close()
+    return tmp.name
+
+
+def process_ligands(structure, interact_distance=4.5, ligand_ligand_distance=3.0):
+    all_ligand_atoms = [a for a in structure.get_atoms() if a.get_parent().id[0] != " "]
+    protein_atoms = [a for a in structure.get_atoms() if a.get_parent().id[0] == " "]
+    ligand_residues = [r for r in structure.get_residues() if r.id[0] != " "]
+    if not ligand_residues:
+        return []
+
+    done = set()
+    groups = []
+    for lig in ligand_residues:
+        lid = (lig.get_resname(), lig.get_parent().id, lig.id[1])
+        if lid in done:
+            continue
+        lig_atoms = list(lig.get_atoms())
+        chains = get_interacting_chains(lig_atoms, protein_atoms, interact_distance)
+        if not chains:
+            continue
+        close = find_close_ligands(lig_atoms, all_ligand_atoms, ligand_ligand_distance)
+        for cl in close:
+            done.add((cl.get_resname(), cl.get_parent().id, cl.id[1]))
+        done.add(lid)
+        groups.append({"ligands": [lig] + close, "interacting_chains": chains})
+    return groups
+
+
+def fix_conect_format(conect_lines):
+    fixed = []
+    for line in conect_lines:
+        if line.startswith("CONECT"):
+            nums = line[6:].strip()
+            if len(nums.replace(" ", "")) % 5 == 0:
+                nums = " ".join(nums[i:i + 5] for i in range(0, len(nums), 5))
+                fixed.append(f"CONECT {nums}\n")
+            else:
+                fixed.append(line)
+        else:
+            fixed.append(line)
+    return fixed
+
+
+def filter_conect_lines(conect_lines, saved_atoms):
+    filtered = []
+    for line in conect_lines:
+        if line.startswith("CONECT"):
+            nums = [line[i:i + 5].strip() for i in range(6, len(line), 5)]
+            valid = [f"{int(n):5d}" for n in nums if n.isdigit() and int(n) in saved_atoms]
+            if valid:
+                filtered.append(f"CONECT{''.join(valid)}\n")
+    return filtered
+
+
+def save_pocket_structure(
+    structure,
+    pocket_info,
+    output_dir,
+    saved_structures,
+    original_lines,
+    conect_lines,
+    input_file_path,
+    rmsd_threshold=2.0,
+):
+    ligands = pocket_info["ligands"]
+    chains = pocket_info["interacting_chains"]
+    fname = Path(input_file_path).stem
+    select = LigandSelect(ligands, chains)
+
+    ligand_names = "_".join(sorted({l.get_resname() for l in ligands}))
+    chains_str = "_".join(sorted(chains))
+    out_file = output_dir / f"{fname}_{ligand_names}_chains_{chains_str}_processed.pdb"
+
+    old_serials = {a.get_serial_number(): a for a in structure.get_atoms() if select.accept_atom(a)}
+    temp_file = save_structure_to_tempfile(structure, select)
+
+    similar = False
+    for s in saved_structures:
+        rmsd = calculate_rmsd_pymol(s["temp_file"], temp_file)
+        if rmsd < rmsd_threshold:
+            logger.debug(f"Similar structure (RMSD {rmsd:.2f}) → skip {out_file}")
+            similar = True
+            break
+
+    saved_structures.append(
+        {"output_file": out_file, "temp_file": temp_file, "skipped_similar": similar}
+    )
+    if similar:
+        return
+
+    new_structure = PDBParser(QUIET=True).get_structure("new", temp_file)
+    new_serials = {a.get_serial_number(): a for a in new_structure.get_atoms() if select.accept_atom(a)}
+    serial_map = dict(zip(old_serials, new_serials))
+
+    upd_conect = []
+    for line in conect_lines:
+        if line.startswith("CONECT"):
+            nums = [line[i:i + 5].strip() for i in range(6, len(line), 5)]
+            new_nums = []
+            for n in nums:
+                if n.isdigit():
+                    old_n = int(n)
+                    new_nums.append(f"{serial_map.get(old_n, old_n):5d}")
+            upd_conect.append(f"CONECT{''.join(new_nums)}\n")
+
+    filter_conect_lines(upd_conect, serial_map.keys())
+
+    io = PDBIO()
+    io.set_structure(structure)
+    with open(out_file, "w") as f:
+        f.writelines(original_lines)
+        io.save(f, select=select)
+    with open(out_file, "r+") as f:
+        lines = f.readlines()
+        if lines[-1].strip() == "END":
+            lines = lines[:-1]
+        f.seek(0)
+        f.writelines(lines)
+        f.write("END\n")
+    logger.debug(f"Saved pocket → {out_file}")
+
+
+def load_original_lines(file_path):
+    conect, other = [], []
+    with open(file_path) as f:
+        for line in f:
+            if line.startswith("CONECT"):
+                conect.append(line)
+            elif not line.startswith(("ATOM", "HETATM", "END", "MASTER", "TER")):
+                other.append(line)
+    return other, conect
+
+
+def process_pdb_file(
+    input_file_path,
+    output_dir_path,
+    interact_distance=4.5,
+    ligand_ligand_distance=3.0,
+    rmsd_threshold=2.0,
+):
+    output_dir = Path(output_dir_path)
+    output_dir.mkdir(exist_ok=True)
+
+    original_lines, conect_lines = load_original_lines(input_file_path)
+    structure = PDBParser(QUIET=True).get_structure("pdb", input_file_path)
+    groups = process_ligands(structure, interact_distance, ligand_ligand_distance)
+
+    saved = []
+    for info in groups:
+        save_pocket_structure(
+            structure,
+            info,
+            output_dir,
+            saved,
+            original_lines,
+            conect_lines,
+            input_file_path,
+            rmsd_threshold,
+        )
+    return saved
+
+
+def analyze_protein(
+    input_file_path,
+    output_dir_path="separated_complexes",
+    interact_distance=4.5,
+    ligand_ligand_distance=3.5,
+    rmsd_threshold=2.0,
+):
+    saved = process_pdb_file(
+        input_file_path,
+        output_dir_path,
+        interact_distance,
+        ligand_ligand_distance,
+        rmsd_threshold,
+    )
+    saved_count = sum(1 for s in saved if not s["skipped_similar"])
+    skipped = sum(1 for s in saved if s["skipped_similar"])
+    return {"structures_saved": saved_count, "structures_skipped_similar": skipped}
+
+
+def get_pdb_files(input_dir):
+    return list(Path(input_dir).glob("*.pdb"))
+
+
+def protein_ligand_separator(cfg):
+    input_dir = Path(cfg.paths.bioml_dir)
+    output_dir = Path(cfg.paths.separated_dir)
+
+    interact_distance = cfg.separator_params.interact_distance
+    ligand_ligand_distance = cfg.separator_params.ligand_ligand_distance
+    rmsd_threshold = cfg.separator_params.rmsd_threshold
+
+    pdb_files = get_pdb_files(input_dir)
+    logger.info("\n========== Protein ligand separator started ==========")
+    results = Parallel(n_jobs=cfg.n_jobs)(
+        delayed(analyze_protein)(
+            pdb,
+            output_dir,
+            interact_distance,
+            ligand_ligand_distance,
+            rmsd_threshold,
+        )
+        for pdb in tqdm(pdb_files, desc="Separating ligand pockets")
+    )
+
+    total_saved = sum(r["structures_saved"] for r in results)
+    total_skip = sum(r["structures_skipped_similar"] for r in results)
+    logger.info(f"Total PDB files: {len(pdb_files)}")
+    logger.info(f"Total similar skipped: {total_skip}")
+    logger.info(f"Total structures SAVED: {total_saved}")
