@@ -16,6 +16,7 @@ from pdb_manipulations import (
     add_h_to_ligands,
     bioml_split,
     create_final_files,
+    find_duplicates_foldseek,
     protein_ligand_separator,
     remove_not_buried_ligands,
     split_overlapping_ligands,
@@ -42,6 +43,7 @@ def main(config_name):
 
     logger.debug(f"Config: {cfg}")
 
+    """
     extract_complexes(cfg)
     decompress_pdb_files(cfg)
 
@@ -58,6 +60,7 @@ def main(config_name):
     # unused = remove_unused_pdb_files(cfg)
     unused = {"removed_files": []}
     bioml_split(cfg)
+    """
     protein_ligand_separator(cfg)
 
     clean_multiple_paths(cfg)

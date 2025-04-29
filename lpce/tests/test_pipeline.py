@@ -1,12 +1,18 @@
 import shutil
 import tempfile
 import warnings
+
 from pathlib import Path
 from typing import Any
+import logging
+from rich.console import Console
+from rich.progress import Progress, SpinnerColumn, TimeElapsedColumn, TextColumn, BarColumn, TaskProgressColumn, TimeRemainingColumn
+from rich.table import Table
+from rich.logging import RichHandler
+import typer
 
 from Bio import BiopythonDeprecationWarning
 from hydra import compose, initialize
-from loguru import logger
 
 from lpce.cleanup import (
     remove_dna_rna_from_directory,
@@ -21,6 +27,7 @@ from lpce.pdb_manipulations import (
     protein_ligand_separator,
     remove_not_buried_ligands,
     split_overlapping_ligands,
+    find_duplicates_foldseek,
 )
 from lpce.utils import (
     clean_multiple_paths,
@@ -34,6 +41,15 @@ from lpce.utils import (
 
 warnings.filterwarnings("ignore", category=BiopythonDeprecationWarning)
 
+app = typer.Typer()
+console = Console()
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(message)s",
+    datefmt="[%X]",
+    handlers=[RichHandler(rich_tracebacks=False)]
+)
 
 def run_pipeline_steps(test_cfg: dict[str, Any]) -> list[str]:
     dna_rna = remove_dna_rna_from_directory(test_cfg)
@@ -42,11 +58,20 @@ def run_pipeline_steps(test_cfg: dict[str, Any]) -> list[str]:
     remove_water_from_directory(test_cfg)
     remove_junk_ligands_from_directory(test_cfg)
 
+    # convert_pdb_to_smiles_sdf(cfg)
+    # extract_and_save_complexes_with_ligands(cfg)
+    # filter_ligands(cfg)
+    # unused = remove_unused_pdb_files(cfg)
+
+
     unused = {"removed_files": []}
 
     bioml_split(test_cfg)
     protein_ligand_separator(test_cfg)
     clean_multiple_paths(test_cfg)
+    find_duplicates_foldseek(test_cfg)
+    # remove_similar_structures(test_cfg)
+
     not_buried = remove_not_buried_ligands(test_cfg)
     split_overlapping_ligands(test_cfg)
     add_h_to_ligands(test_cfg)
@@ -59,7 +84,7 @@ def test_run_pipeline(config_name: str) -> None:
     with initialize(config_path="../config", version_base=None):
         cfg = compose(config_name=config_name)
 
-    setup_logging(cfg)
+    #setup_logging(cfg)
 
     test_data_dir = Path("lpce/tests/test_data")
     final_dirs = {
@@ -77,12 +102,12 @@ def test_run_pipeline(config_name: str) -> None:
         test_cfg = update_test_config(cfg, directories)
 
         shutil.copytree(test_data_dir, directories["processed"], dirs_exist_ok=True)
-        logger.info(f"Running tests in temporary directory: {directories['processed']}")
+        logging.info(f"Running tests in temporary directory: {directories['processed']}")
 
         pdb_files = list(directories["processed"].glob("*.pdb"))
-        logger.info(f"PDB files found: {len(pdb_files)}")
+        logging.info(f"PDB files found: {len(pdb_files)}")
         if not pdb_files:
-            logger.warning("No PDB files found in the processed directory for testing.")
+            logging.warning("No PDB files found in the processed directory for testing.")
 
         removed_files = run_pipeline_steps(test_cfg)
 
@@ -96,18 +121,13 @@ def test_run_pipeline(config_name: str) -> None:
         )
 
         copy_results_to_final(directories["processed"], test_cfg, final_dirs)
-        logger.info("DONE! Test pipeline completed successfully")
+        logging.info("DONE! Test pipeline completed successfully")
 
 
-import rich_click as click
-
-
-@click.command(context_settings={"help_option_names": ["-h", "--help"]})
-@click.argument("config_name", type=str)
+@app.command()
 def cli(config_name: str) -> None:
-    """Run the test pipeline"""
     test_run_pipeline(config_name)
 
 
 if __name__ == "__main__":
-    cli()
+    app()

@@ -1,4 +1,24 @@
 import sys, re
+import os
+from pathlib import Path
+import tempfile
+import threading
+import uuid
+import warnings
+from dataclasses import dataclass
+
+import logging
+import numpy as np
+import pymol
+from Bio.PDB import PDBIO, NeighborSearch, PDBParser, Select
+from loguru import logger
+from pymol import cmd
+from spyrmsd import graph, molecule
+import datamol as dm
+from rdkit import RDLogger
+
+for var in ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS", "NUMEXPR_NUM_THREADS"):
+    os.environ.setdefault(var, "1")
 
 class _SilentStream:
     _pat = re.compile(
@@ -15,41 +35,14 @@ class _SilentStream:
 sys.stdout = _SilentStream(sys.stdout)
 sys.stderr = _SilentStream(sys.stderr)
 
-import tempfile
-import threading
-import uuid
-import warnings
-from dataclasses import dataclass
-from pathlib import Path
-
-import numpy as np
-import pymol
-from Bio.PDB import PDBIO, NeighborSearch, PDBParser, Select
-from loguru import logger
-from pymol import cmd
-from rdkit import Chem
-from spyrmsd import graph, molecule
-
-import datamol as dm
-from rdkit import RDLogger
-
 dm.disable_rdkit_log()
-import logging
+
 logging.getLogger("rdkit").setLevel(logging.ERROR)
 logging.getLogger("rdkit.Chem.PandasTools").setLevel(logging.CRITICAL)
 RDLogger.DisableLog("rdApp.*")
 
-warnings.filterwarnings(
-    "ignore", category=UserWarning, module="MDAnalysis.core.universe"
-)
-
-warnings.filterwarnings(
-    "ignore", category=UserWarning, module="MDAnalysis.core.universe"
-)
-warnings.filterwarnings(
-    "ignore", message="Disconnected graph detected.*", module="spyrmsd.graphs.rx"
-)
-RDLogger.DisableLog("rdApp.*")
+warnings.filterwarnings("ignore", category=UserWarning, module="MDAnalysis.core.universe")
+warnings.filterwarnings("ignore", message="Disconnected graph detected.*", module="spyrmsd.graphs.rx")
 
 logger.remove()
 logger.add(sys.stdout, format="{message}", level="DEBUG")
@@ -157,6 +150,7 @@ def _rmsd_on_ca(pdb1: str, pdb2: str) -> float:
             return float(cmd.align(f"{o1} and name CA", f"{o2} and name CA")[0])
         finally:
             cmd.delete("all")
+            cmd.reinitialize()
 
 
 def _rmsd_on_ligand(pdb1: str, pdb2: str) -> float:
@@ -165,7 +159,6 @@ def _rmsd_on_ligand(pdb1: str, pdb2: str) -> float:
         cmd.delete("all")
         cmd.load(pdb1, o1)
         cmd.load(pdb2, o2)
-
         cmd.align(f"{o1} and name CA", f"{o2} and name CA", cycles=0)
 
         def _dump(obj, fn):
@@ -174,81 +167,42 @@ def _rmsd_on_ligand(pdb1: str, pdb2: str) -> float:
             cmd.save(fn, f"{tmp_obj} and hetatm and not resn HOH", state=1)
             cmd.delete(tmp_obj)
 
-        t1 = tempfile.NamedTemporaryFile(suffix=".pdb", delete=False)
-        t2 = tempfile.NamedTemporaryFile(suffix=".pdb", delete=False)
-        _dump(o1, t1.name)
-        _dump(o2, t2.name)
 
-        with dm.without_rdkit_log():
-            m1 = dm.read_pdbfile(t1.name)
-            m2 = dm.read_pdbfile(t2.name)
-
-        t1.close()
-        t2.close()
-        if not m1 or not m2:
-            logger.debug("    ligand RMSD -> RDKit build failed (m1 or m2 is None)")
-            cmd.delete("all")
-            return float("inf")
-
+        with tempfile.NamedTemporaryFile(suffix=".pdb", delete=True) as t1, tempfile.NamedTemporaryFile(suffix=".pdb", delete=True) as t2:
+            _dump(o1, t1.name)
+            _dump(o2, t2.name)
+            t1_path, t2_path = Path(t1.name), Path(t2.name)
+            
         try:
-            if not m1:
-                logger.debug("MolFromPDBFile failed, skipping RMSD")
+            with dm.without_rdkit_log():
+                m1 = dm.read_pdbfile(t1_path)
+                m2 = dm.read_pdbfile(t2_path)
+
+            if not m1 or not m2:
+                cmd.delete("all")
                 return float("inf")
-        except Exception as e:
-            logger.debug(f"Exception {e}, skipping ligand RMSD")
-            return float("inf")
 
-        try:
-            if not m2:
-                logger.debug("MolFromPDBFile failed, skipping RMSD")
-                return float("inf")
-        except Exception as e:
-            logger.debug(f"Exception {e}, skipping ligand RMSD")
-            return float("inf")
+            c1 = np.array([a.coord for a in cmd.get_model(o1 + " and hetatm and not resn HOH").atom])
+            c2 = np.array([a.coord for a in cmd.get_model(o2 + " and hetatm and not resn HOH").atom])
 
-        c1 = np.array(
-            [a.coord for a in cmd.get_model(o1 + " and hetatm and not resn HOH").atom]
-        )
-        c2 = np.array(
-            [a.coord for a in cmd.get_model(o2 + " and hetatm and not resn HOH").atom]
-        )
-
-        try:
             mol1 = molecule.Molecule.from_rdkit(m1)
             mol2 = molecule.Molecule.from_rdkit(m2)
-            G1 = graph.graph_from_adjacency_matrix(
-                mol1.adjacency_matrix, mol1.atomicnums
-            )
-            G2 = graph.graph_from_adjacency_matrix(
-                mol2.adjacency_matrix, mol2.atomicnums
-            )
+            G1 = graph.graph_from_adjacency_matrix(mol1.adjacency_matrix, mol1.atomicnums)
+            G2 = graph.graph_from_adjacency_matrix(mol2.adjacency_matrix, mol2.atomicnums)
 
             for idx1, idx2 in graph.match_graphs(G1, G2):
                 r = np.sqrt(np.mean((c1[idx1] - c2[idx2]) ** 2))
-                logger.debug("    ligand RMSD -> graph mode matched. RMSD=%.3f" % r)
                 cmd.delete("all")
                 return float(r)
         except Exception as e:
-            logger.debug(f"    ligand RMSD -> graph error: {e}")
+            logger.debug(f"ligand RMSD error: {e}")
+        finally:
+            t1_path.unlink(missing_ok=True)
+            t2_path.unlink(missing_ok=True)
+            cmd.delete("all")
 
-        logger.debug("    ligand RMSD -> return inf (no match)")
-        cmd.delete("all")
         return float("inf")
 
-
-class _LigandPocketSelect(Select):
-    def __init__(self, ligands, chains):
-        self._ligand_ids = {(r.get_parent().id, r.id) for r in ligands}
-        self._chains = chains
-
-    def accept_chain(self, chain):
-        return chain.id in self._chains or any(
-            chain.id == cid for cid, _ in self._ligand_ids
-        )
-
-    def accept_residue(self, residue):
-        cid = residue.get_parent().id
-        return (cid, residue.id) in self._ligand_ids or residue.id[0] == " "
 
 
 @dataclass
@@ -719,12 +673,14 @@ class ProteinAnalyzer:
         pockets = self._filter_overabundant(pockets)
 
         saved = 0
-        for p in pockets:
-            try:
+        try:
+            for p in pockets:
                 if self.writer.save(structure, p, out_dir, extra, pdb_filepath.stem):
                     saved += 1
-            except Exception as e:
-                logger.exception(f"Error processing {pdb_filepath}: {e}")
+        finally:
+            for item in self.writer._saved:
+                Path(item["tmp"]).unlink(missing_ok=True)
+            self.writer._saved.clear()
 
         return {"saved": saved, "skipped": self.writer.skipped}
 
@@ -754,35 +710,90 @@ def analyze_protein(
 
 from pathlib import Path
 
-from joblib import Parallel, delayed
-from loguru import logger
-from tqdm import tqdm
 
 
 def get_pdb_files(input_dir: Path):
     return list(input_dir.glob("*.pdb"))
 
+    import sys
+from contextlib import contextmanager
+from pathlib import Path
+
+from joblib import Parallel, delayed, parallel
+from rich.console import Console
+from rich.progress import (
+    Progress,
+    SpinnerColumn,
+    TextColumn,
+    BarColumn,
+    TaskProgressColumn,
+    TimeElapsedColumn,
+    TimeRemainingColumn,
+)
+
+console = Console(force_terminal=True, width=100)
+
+logger.remove()
+logger.add(sys.stderr, format="{message}", level="INFO")
+
+@contextmanager
+def rich_joblib_progress(total: int):
+    old_cb = parallel.BatchCompletionCallBack
+    with Progress(
+        SpinnerColumn(),
+        TextColumn("Processing files:"),
+        BarColumn(bar_width=None),
+        TaskProgressColumn("{task.completed}/{task.total}"),
+        TimeElapsedColumn(),
+        TimeRemainingColumn(),
+        console=console,
+        transient=False,
+        refresh_per_second=4,
+    ) as progress:
+        task_id = progress.add_task("processing", total=total)
+
+        class RichCallBack(old_cb):
+            def __call__(self, *args, **kwargs):
+                res = old_cb.__call__(self, *args, **kwargs)
+                progress.update(task_id, advance=self.batch_size)
+                return res
+
+        parallel.BatchCompletionCallBack = RichCallBack
+        try:
+            yield
+        finally:
+            parallel.BatchCompletionCallBack = old_cb
+
+import gc
+
+from joblib import Parallel, delayed, parallel_backend
+from pathlib import Path
 
 def _run_single(pdb_file: Path, output_dir: Path, params: dict):
-    result = analyze_protein(
-        pdb_file,
-        output_dir,
-        interaction_distance=params["interaction_distance"],
-        ligand_cluster_distance=params["ligand_cluster_distance"],
-        rmsd_threshold=params["rmsd_threshold"],
-        default_bond_distance=params["default_bond_distance"],
-        short_peptide_length=params["short_peptide_length"],
-        ligand_rmsd_threshold=params["ligand_rmsd_threshold"],
-        overlap_distance=params["overlap_distance"],
-    )
-    return {
-        "structures_saved": result["saved"],
-        "structures_skipped_similar": result["skipped"],
-    }
+    result = {"saved": 0, "skipped": 0}
+    try:
+        result = analyze_protein(
+            pdb_file,
+            output_dir,
+            interaction_distance=params["interaction_distance"],
+            ligand_cluster_distance=params["ligand_cluster_distance"],
+            rmsd_threshold=params["rmsd_threshold"],
+            default_bond_distance=params["default_bond_distance"],
+            short_peptide_length=params["short_peptide_length"],
+            ligand_rmsd_threshold=params["ligand_rmsd_threshold"],
+            overlap_distance=params["overlap_distance"],
+        )
+    except Exception as e:
+        logger.exception(f"Failed to process {pdb_file}: {e}")
+    finally:
+        import gc
+        gc.collect()
+        with _PymolSession.locked():
+            cmd.reinitialize()
+    return result
 
 
 def protein_ligand_separator(cfg):
-    logger.info("\n========== Protein ligand separator==========")
     input_dir = Path(cfg.paths.bioml_dir)
     output_dir = Path(cfg.paths.separated_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -791,29 +802,25 @@ def protein_ligand_separator(cfg):
         "interaction_distance": cfg.separator_params.interact_distance,
         "ligand_cluster_distance": cfg.separator_params.ligand_ligand_distance,
         "rmsd_threshold": cfg.separator_params.rmsd_threshold,
-        "default_bond_distance": getattr(
-            cfg.separator_params, "default_bond_distance", 1.5
-        ),
-        "short_peptide_length": getattr(
-            cfg.separator_params, "short_peptide_length", 8
-        ),
-        "ligand_rmsd_threshold": getattr(
-            cfg.separator_params, "ligand_rmsd_threshold", 1.0
-        ),
+        "default_bond_distance": getattr(cfg.separator_params, "default_bond_distance", 1.5),
+        "short_peptide_length": getattr(cfg.separator_params, "short_peptide_length", 8),
+        "ligand_rmsd_threshold": getattr(cfg.separator_params, "ligand_rmsd_threshold", 1.0),
         "overlap_distance": getattr(cfg.separator_params, "overlap_distance", 0.6),
     }
 
     pdb_files = get_pdb_files(input_dir)
-    total_files = len(pdb_files)
-    logger.info(f"Total PDB files found: {total_files}")
-
-    results = Parallel(n_jobs=cfg.n_jobs)(
-        delayed(_run_single)(pdb_file, output_dir, params)
-        for pdb_file in tqdm(pdb_files, desc="Separating ligand pockets in PDB files")
-    )
-    logger.info("Results:")
-
-    total_saved = sum(r["structures_saved"] for r in results)
-    total_skipped = sum(r["structures_skipped_similar"] for r in results)
-    logger.info(f"Total similar structures skipped: {total_skipped}")
-    logger.info(f"Total structures SAVED: {total_saved}")
+    total = len(pdb_files)
+    logger.info(f"Total PDB files found: {total}")
+    
+    with parallel_backend("loky", n_jobs=cfg.n_jobs): 
+        with rich_joblib_progress(total):
+            results = Parallel(
+                n_jobs=cfg.n_jobs,
+                batch_size=1,
+                pre_dispatch='n_jobs'
+            )(delayed(_run_single)(p, output_dir, params) for p in pdb_files)
+            
+    saved = sum(r["saved"] for r in results)
+    skipped = sum(r["skipped"] for r in results)
+    logger.info(f"Total similar structures skipped: {skipped}")
+    logger.info(f"Total structures SAVED: {saved}")
