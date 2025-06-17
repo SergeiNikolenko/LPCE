@@ -43,7 +43,7 @@ def main(config_name):
 
     logger.debug(f"Config: {cfg}")
 
-    """
+
     extract_complexes(cfg)
     decompress_pdb_files(cfg)
 
@@ -60,12 +60,13 @@ def main(config_name):
     # unused = remove_unused_pdb_files(cfg)
     unused = {"removed_files": []}
     bioml_split(cfg)
-    """
+   
     protein_ligand_separator(cfg)
 
     clean_multiple_paths(cfg)
     find_duplicates_foldseek(cfg)
     # remove_similar_structures(cfg)
+
     not_buried = remove_not_buried_ligands(cfg)
     split_overlapping_ligands(cfg)
     add_h_to_ligands(cfg)

@@ -3,7 +3,7 @@
 CONFIG_NAME ?= config
 
 
-all: clean tests_success clean run_pipeline end
+all: clean tests_success clean run_pipeline
 
 tmux:
 	@tmux new-session -d -s lpce "make all CONFIG_FILE=$(CONFIG_NAME)"

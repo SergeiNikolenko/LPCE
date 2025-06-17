@@ -27,7 +27,11 @@ def calculate_distances(ligand_atoms, protein_atoms):
 
 def is_ligand_buried(pdb_file, threshold, distance_cutoff=5.0):
     parser = PDBParser(QUIET=True)
-    structure = parser.get_structure("complex", pdb_file)
+    try:
+        structure = parser.get_structure("complex", pdb_file)
+    except Exception as e:
+        logger.warning(f"Skipping file {pdb_file.name} due to error: {e}")
+        return False, pdb_file.name
 
     ligand_atoms = []
     protein_atoms = []
@@ -48,6 +52,7 @@ def is_ligand_buried(pdb_file, threshold, distance_cutoff=5.0):
     fraction_buried = buried_atoms / len(ligand_atoms)
 
     return fraction_buried >= threshold, pdb_file.name
+
 
 
 def process_structures(output_dir, threshold=0.3, distance_cutoff=5.0, n_jobs=112):
@@ -77,6 +82,7 @@ def process_structures(output_dir, threshold=0.3, distance_cutoff=5.0, n_jobs=11
 
 
 def remove_not_buried_ligands(cfg):
+    
     return process_structures(
         output_dir=cfg.paths.separated_dir,
         threshold=cfg.buried.buried_threshold,

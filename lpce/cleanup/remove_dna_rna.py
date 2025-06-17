@@ -109,7 +109,7 @@ def remove_dna_rna_from_directory(cfg) -> dict:
     ]
 
     # Return results
-    logger.info(f"\n======== Removing DNA/RNA from PDB files ========")
+    logger.info("\n======== Removing DNA/RNA from PDB files ========")
     logger.info(f"Total files analyzed: {len(files):,}")
     logger.info(f"Files removed: {len(removed_files):,}")
     logger.info(f"Files retained: {len(retained_files):,}")

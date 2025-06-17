@@ -1,130 +1,101 @@
+# convert_pdb_to_smiles_sdf.py
 import subprocess
 import tempfile
 from pathlib import Path
 
+import requests
 from joblib import Parallel, delayed
 from loguru import logger
 from tqdm import tqdm
 
 
-def process_pdb_file(pdb_file_path, smiles_output_dir, sdf_output_dir):
-    """
-    Processes a single PDB file to extract HETATM blocks, converts them to SMILES and SDF formats,
-    and saves the results to the specified output directories.
-
-    Args:
-        pdb_file_path (Path): Path to the input PDB file.
-        smiles_output_dir (Path): Directory where SMILES files will be saved.
-        sdf_output_dir (Path): Directory where SDF files will be saved.
-
-    Returns:
-        int: The number of ligands found in the PDB file.
-    """
+def download_ligand_sdf(pdb_id: str, chain_id: str, res_seq: str, out_path: Path) -> bool:
+    url = (
+        f"https://models.rcsb.org/v1/{pdb_id}/ligand"
+        f"?auth_asym_id={chain_id}&auth_seq_id={res_seq}&encoding=sdf"
+    )
     try:
-        with pdb_file_path.open("r") as file:
-            lines = file.readlines()
+        r = requests.get(url, timeout=10)
+        if r.ok and r.content.strip():
+            out_path.write_bytes(r.content)
+            return True
+    except Exception as exc:  # noqa: BLE001
+        logger.warning(f"Download failed for {url}: {exc}")
+    return False
 
-        hetatm_blocks = {}
-        ligands_found = 0
 
+def process_pdb_file(pdb_file_path: Path, smiles_output_dir: Path, sdf_output_dir: Path) -> int:
+    try:
+        lines = pdb_file_path.read_text().splitlines()
+        hetatm_blocks: dict[str, list[str]] = {}
+        res_info: dict[str, tuple[str, str]] = {}
         for line in lines:
             if line.startswith("HETATM"):
                 res_name = line[17:20].strip()
                 chain_id = line[21].strip()
-                key = f"{res_name}_{chain_id}"
-                if key not in hetatm_blocks:
-                    hetatm_blocks[key] = []
-                hetatm_blocks[key].append(line)
+                res_seq = line[22:26].strip()
+                key = f"{res_name}_{chain_id}_{res_seq}"
+                hetatm_blocks.setdefault(key, []).append(line)
+                res_info[key] = (chain_id, res_seq)
             elif line.startswith("END"):
                 break
-
         if not hetatm_blocks:
             return 0
 
-        ligands_found = len(hetatm_blocks)
+        smiles_file = smiles_output_dir / pdb_file_path.with_suffix(".smi").name
+        sdf_file = sdf_output_dir / pdb_file_path.with_suffix(".sdf").name
 
-        with tempfile.TemporaryDirectory() as hetatm_dir:
-            hetatm_dir = Path(hetatm_dir)
-            for key, hetatm_lines in hetatm_blocks.items():
-                output_file = hetatm_dir / f"{key}.pdb"
-                with output_file.open("w") as out_file:
-                    out_file.writelines(hetatm_lines)
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp_dir_path = Path(tmp_dir)
+            pdb_id = pdb_file_path.stem[:4].lower()
 
-            smiles_file = smiles_output_dir / pdb_file_path.with_suffix(".smi").name
-            sdf_file = sdf_output_dir / pdb_file_path.with_suffix(".sdf").name
+            for key, het_lines in hetatm_blocks.items():
+                chain_id, res_seq = res_info[key]
+                ligand_sdf = tmp_dir_path / f"{key}.sdf"
 
-            with smiles_file.open("w") as out_smiles:
-                for pdb_file in hetatm_dir.glob("*.pdb"):
-                    temp_smiles_file = pdb_file.with_suffix(".smi")
-                    temp_sdf_file = pdb_file.with_suffix(".sdf")
+                ok = download_ligand_sdf(pdb_id, chain_id, res_seq, ligand_sdf)
+                if not ok:
+                    ligand_pdb = tmp_dir_path / f"{key}.pdb"
+                    ligand_pdb.write_text("\n".join(het_lines) + "\nEND\n")
+                    subprocess.run(
+                        ["obabel", str(ligand_pdb), "-O", str(ligand_sdf), "-osdf"],
+                        capture_output=True,
+                        check=False,
+                    )
 
-                    command_smiles = [
-                        "obabel",
-                        str(pdb_file),
-                        "-O",
-                        str(temp_smiles_file),
-                        "-osmi",
-                    ]
-                    subprocess.run(command_smiles, capture_output=True, shell=False)
+                if ligand_sdf.exists() and ligand_sdf.stat().st_size:
+                    subprocess.run(
+                        ["obabel", str(ligand_sdf), "-O", str(ligand_sdf.with_suffix('.smi')), "-osmi"],
+                        capture_output=True,
+                        check=False,
+                    )
+                    with ligand_sdf.open("rb") as src, sdf_file.open("ab") as dst:
+                        dst.write(src.read())
+                    smi_tmp = ligand_sdf.with_suffix(".smi")
+                    if smi_tmp.exists():
+                        smiles = smi_tmp.read_text().strip()
+                        with smiles_file.open("a") as smi_out:
+                            smi_out.write(f"{smiles}\t{key}\n")
 
-                    command_sdf = [
-                        "obabel",
-                        str(pdb_file),
-                        "-O",
-                        str(temp_sdf_file),
-                        "-osdf",
-                    ]
-                    subprocess.run(command_sdf, capture_output=True, shell=False)
-
-                    if temp_smiles_file.exists():
-                        with temp_smiles_file.open("r") as temp_file:
-                            for line in temp_file:
-                                smiles_line = f"{line.strip()}\t{pdb_file.stem}\n"
-                                out_smiles.write(smiles_line)
-
-                    if temp_sdf_file.exists():
-                        with sdf_file.open("a") as out_sdf:
-                            with temp_sdf_file.open("r") as temp_file:
-                                out_sdf.write(temp_file.read())
-
-        return ligands_found
-    except Exception as e:
-        logger.error(f"Failed to process {pdb_file_path}: {e}")
+        return len(hetatm_blocks)
+    except Exception as exc:  # noqa: BLE001
+        logger.error(f"Failed to process {pdb_file_path}: {exc}")
         return 0
 
 
-def convert_pdb_to_smiles_sdf(cfg: object) -> None:
-    """
-    Processes all PDB files in the input directory by extracting ligands and converting
-    them to SMILES and SDF formats. The results are saved in the output directories.
-
-    Args:
-        cfg (object): Configuration object containing paths and other parameters.
-
-    Returns:
-        None
-    """
-
+def convert_pdb_to_smiles_sdf(cfg) -> None:
     smiles_output_dir = Path(cfg.paths.ligands_dir) / "smiles"
     sdf_output_dir = Path(cfg.paths.ligands_dir) / "sdf"
-
     smiles_output_dir.mkdir(parents=True, exist_ok=True)
     sdf_output_dir.mkdir(parents=True, exist_ok=True)
 
     pdb_files = list(Path(cfg.paths.processed_dir).glob("*.pdb"))
-    total_files = len(pdb_files)
-
     logger.info("\n========== Converting PDB to SMILES and SDF ==========")
-    logger.info(
-        f"Processing {total_files} PDB files from {Path(cfg.paths.processed_dir)}"
-    )
+    logger.info(f"Processing {len(pdb_files)} PDB files from {cfg.paths.processed_dir}")
 
     results = Parallel(n_jobs=cfg.n_jobs)(
-        delayed(process_pdb_file)(pdb_file, smiles_output_dir, sdf_output_dir)
-        for pdb_file in tqdm(pdb_files, desc="Processing PDB files")
+        delayed(process_pdb_file)(pdb, smiles_output_dir, sdf_output_dir)
+        for pdb in tqdm(pdb_files, desc="Processing PDB files")
     )
-
-    total_ligands = sum(results)
-
-    logger.info(f"Total proteins processed: {total_files}")
-    logger.info(f"Total ligands found: {total_ligands}")
+    logger.info(f"Total proteins processed: {len(pdb_files)}")
+    logger.info(f"Total ligands found: {sum(results)}")
