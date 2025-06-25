@@ -1,4 +1,29 @@
-import sys, re
+import copy
+from dataclasses import dataclass
+import logging
+from pathlib import Path
+import re
+import sys
+import tempfile
+import threading
+import uuid
+import warnings
+
+from tqdm import tqdm
+
+from Bio.PDB import NeighborSearch, PDBIO, PDBParser, Select
+import datamol as dm
+from joblib import Parallel, delayed
+from loguru import logger
+import numpy as np
+import pymol
+from pymol import cmd
+from rdkit import Chem
+from rdkit import RDLogger
+from spyrmsd import graph, molecule
+
+from collections import Counter
+
 
 class _SilentStream:
     _pat = re.compile(
@@ -15,26 +40,10 @@ class _SilentStream:
 sys.stdout = _SilentStream(sys.stdout)
 sys.stderr = _SilentStream(sys.stderr)
 
-import tempfile
-import threading
-import uuid
-import warnings
-from dataclasses import dataclass
-from pathlib import Path
 
-import numpy as np
-import pymol
-from Bio.PDB import PDBIO, NeighborSearch, PDBParser, Select
-from loguru import logger
-from pymol import cmd
-from rdkit import Chem
-from spyrmsd import graph, molecule
-
-import datamol as dm
-from rdkit import RDLogger
 
 dm.disable_rdkit_log()
-import logging
+
 logging.getLogger("rdkit").setLevel(logging.ERROR)
 logging.getLogger("rdkit.Chem.PandasTools").setLevel(logging.CRITICAL)
 RDLogger.DisableLog("rdApp.*")
@@ -235,20 +244,6 @@ def _rmsd_on_ligand(pdb1: str, pdb2: str) -> float:
         return float("inf")
 
 
-class _LigandPocketSelect(Select):
-    def __init__(self, ligands, chains):
-        self._ligand_ids = {(r.get_parent().id, r.id) for r in ligands}
-        self._chains = chains
-
-    def accept_chain(self, chain):
-        return chain.id in self._chains or any(
-            chain.id == cid for cid, _ in self._ligand_ids
-        )
-
-    def accept_residue(self, residue):
-        cid = residue.get_parent().id
-        return (cid, residue.id) in self._ligand_ids or residue.id[0] == " "
-
 
 @dataclass
 class Pocket:
@@ -256,6 +251,17 @@ class Pocket:
     chains: set[str]
     bond_type: str
 
+
+def parse_modres(pdb_path: Path):
+    modres = set()
+    with open(pdb_path) as fh:
+        for line in fh:
+            if line.startswith("MODRES"):
+                resname = line[12:15].strip()
+                chain = line[16].strip()
+                resseq = line[18:22].strip()
+                modres.add((resname, resseq, chain))
+    return modres
 
 class LigandPocketExtractor:
     def __init__(
@@ -268,6 +274,8 @@ class LigandPocketExtractor:
         self._search_radius = max(
             self.ligand_cluster_d, max(BOND_LENGTHS.values(), default=0.0)
         )
+
+    
 
     @staticmethod
     def _chains_near(lig_atoms, prot_atoms, d):
@@ -324,7 +332,14 @@ class LigandPocketExtractor:
 
         return ""
 
-    def extract(self, structure):
+    @staticmethod
+    def _is_modres(residue, modres_set):
+        resname = residue.get_resname().strip()
+        resseq = str(residue.id[1]).strip()
+        chain = residue.get_parent().id.strip()
+        return (resname, resseq, chain) in modres_set
+
+    def extract(self, structure, modres_set=frozenset()):
         if len(structure) > 1:
             logger.debug("extract: multiple models, using first model.")
             structure = structure[0]
@@ -349,8 +364,11 @@ class LigandPocketExtractor:
         candidates = [
             r
             for r in structure.get_residues()
-            if (r.id[0] != " " and r.get_resname() != "HOH")
-            or len(chain_res[r.get_parent().id]) <= self.short_peptide
+            if (
+                (r.id[0] != " " and r.get_resname() != "HOH")
+                or len(chain_res[r.get_parent().id]) <= self.short_peptide
+            )
+            and not self._is_modres(r, modres_set)
         ]
 
         if not candidates:
@@ -401,7 +419,7 @@ class LigandPocketExtractor:
         return pockets
 
 
-import copy
+
 
 
 def _unique_name(base, taken):
@@ -453,14 +471,14 @@ class PocketWriter:
         self._skipped = 0
 
     def _is_duplicate(self, new_tmp, lig_resnames, new_chains):
-        new_names = set(lig_resnames)
+        new_counts = Counter(lig_resnames)
         for s in self._saved:
             if (
                 s["chains"] != new_chains
                 and _rmsd_on_ca(s["tmp"], new_tmp) >= self.rmsd_thr
             ):
                 continue
-            if new_names != set(s["ligand_res"]):
+            if Counter(s["ligand_res"]) != new_counts:
                 continue
             if _rmsd_on_ligand(s["tmp"], new_tmp) < self.lig_rmsd_thr:
                 return True
@@ -522,20 +540,17 @@ class PocketWriter:
         merged_ligs = []
         group_names = []
         for comp in comps.values():
-            names = sorted({r.get_resname() for r in comp})
+            names = [r.get_resname() for r in comp]
             if len(comp) > 1:
-                new_name = "".join(names)[:3]
+                new_name = names[0][:3]
                 main = self._merge_residues(comp, new_name)
                 merged_ligs.append(main)
             else:
                 merged_ligs.append(comp[0])
-            group_names.append("".join(names))
-
+            group_names.append("-".join(names))
         pocket.ligands = merged_ligs
 
-        file_lig_code = (
-            "_".join(sorted(group_names)) if len(group_names) > 1 else group_names[0]
-        )
+        file_lig_code = "-".join(group_names)
         chains_code = "_".join(sorted(pocket.chains))
         parts = [pdb_basename, file_lig_code, "chains", chains_code]
         if pocket.bond_type:
@@ -706,10 +721,13 @@ class ProteinAnalyzer:
         pdb_filepath = Path(pdb_filepath)
         out_dir = Path(output_directory)
         out_dir.mkdir(exist_ok=True)
+
         extra = self._read_extra_lines(pdb_filepath)
         structure = PDBParser(QUIET=True).get_structure("pdb", pdb_filepath)
 
-        raw = self.extractor.extract(structure)
+        modres_set = parse_modres(pdb_filepath)          # <─ 1
+        raw = self.extractor.extract(structure, modres_set)  # <─ 2
+
         prot_atoms = [a for a in structure.get_atoms() if a.get_parent().id[0] == " "]
 
         pockets = []
@@ -751,11 +769,7 @@ def analyze_protein(
     return analyzer.analyze(pdb_filepath, output_directory)
 
 
-from pathlib import Path
 
-from joblib import Parallel, delayed
-from loguru import logger
-from tqdm import tqdm
 
 
 def get_pdb_files(input_dir: Path):

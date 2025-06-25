@@ -1,0 +1,46 @@
+n_jobs: 54
+
+paths:
+  raw_dir: /home/nikolenko/work/ligandpro/data/BindingMOAD_2020_processed
+  processed_dir: /mnt/ligandpro/db/LPCE_BindingMOAD/processed
+  ligands_dir: /mnt/ligandpro/db/LPCE_BindingMOAD/ligands
+  bioml_dir: /mnt/ligandpro/db/LPCE_BindingMOAD/bioml
+  separated_dir: /mnt/ligandpro/db/LPCE_BindingMOAD/separated
+  final_dir: /mnt/ligandpro/db/LPCE_BindingMOAD/final
+  
+output_files:
+  removed_files_json: data_BindingMOAD/removed_files.json
+  complexes_json: data_BindingMOAD/complexes.json
+  grouped_complexes_json: data_BindingMOAD/grouped_complexes.json
+  site_info_json: data_BindingMOAD/site_info.json
+  trash_ligands_json: data/trash_ligands_no.json
+  removed_ligands_summary_json: data_BindingMOAD/removed_ligands_summary.json
+  filtered_ligands_json: data_BindingMOAD/filtered_ligands.json
+  cleaned_complexes_json: data_PDBBind/cleaned_complexes.json
+
+junk_ligands:
+  threshold: 4
+
+logging:
+  log_file: logs/logfile_PDBBind.log
+  log_file_tests: logs/logfile_tests_PDBBind.log
+
+separator_params:
+  interact_distance: 4.5         # Расстояние для определения взаимодействия атомов.
+  ligand_ligand_distance: 0.5    # Расстояние для группировки лигандов.
+  rmsd_threshold: 2.0            # Порог RMSD для схожести структур.
+  identity_threshold: 0.98       # Порог идентичности для схожести структур.
+
+email:
+  user: ${oc.env:EMAIL_USER}
+  password: ${oc.env:EMAIL_PASSWORD}
+  recipient: Nikolenko.Sergei@icloud.com
+
+buried:
+  buried_threshold: 0.3          # Порог для определения «погружённости» лиганда.
+  buried_distance_cutoff: 5.0    # Расстояние для определения погруженности.
+
+overlapping:
+  overlapping_threshold: 0.5     # Расстояние для определения наложения лигандов.
+
+add_h_to_ligands: false
