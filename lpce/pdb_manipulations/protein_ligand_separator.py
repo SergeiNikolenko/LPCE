@@ -424,7 +424,7 @@ class LigandPocketExtractor:
 
 def _unique_name(base, taken):
     import string
-    base = base.strip().upper()[:2]
+    base = base.strip().upper()[:3]
     pool = string.ascii_uppercase + string.digits
     for s in pool:
         cand = (base + s).ljust(4)[:4]
@@ -432,7 +432,7 @@ def _unique_name(base, taken):
             return cand
     for s1 in pool:
         for s2 in pool:
-            cand = (base + s1 + s2)[:4]
+            cand = (base[:2] + s1 + s2)[:4]
             if cand not in taken:
                 return cand
     raise ValueError("too many duplicates")
@@ -454,6 +454,21 @@ class _MergedSelect(Select):
             return True
         return residue.get_parent().id in self._chains and residue.id[0] == " "
 
+
+def _unique_name(base, taken):
+    import string
+    base = base.strip().upper()[:3]
+    pool = string.ascii_uppercase + string.digits
+    for s in pool:
+        cand = (base + s).ljust(4)[:4]
+        if cand not in taken:
+            return cand
+    for s1 in pool:
+        for s2 in pool:
+            cand = (base[:2] + s1 + s2)[:4]
+            if cand not in taken:
+                return cand
+    raise ValueError("too many duplicates")
 
 class PocketWriter:
     def __init__(
@@ -485,27 +500,33 @@ class PocketWriter:
         return False
 
     @staticmethod
-    def _merge_residues(residues, new_name):
+    def _merge_residues(residues: list, new_name: str):
         main = residues[0]
-        main.resname = "LIG"
-        taken = {a.get_name() for a in main.get_atoms()}
-        
+        main.resname = new_name
+        taken: set[str] = {a.get_name() for a in main.get_atoms()}
+
         for r in residues[1:]:
             if r is main:
                 continue
-            
-            for at in list(r.get_atoms()):
-                c = copy.copy(at)
-                nn = _unique_name(at.name.strip(), taken)
-                c.id = c.name = nn
+            for atom in r.get_atoms():
+                c = copy.copy(atom)
+                altloc = atom.get_altloc()
+                base = atom.name.strip().upper()
+                if altloc and altloc != " ":
+                    base = f"{base[:2]}{altloc}"
+                nn = _unique_name(base, taken)
+                c.id = nn
+                c.name = nn
                 c.fullname = f"{nn:>4}"
+                c.set_altloc(" ")            
                 taken.add(nn)
                 main.add(c)
-            
             parent = r.get_parent()
             if parent is not None:
                 parent.detach_child(r.id)
+
         return main
+
 
 
     def save(self, structure, pocket, out_dir, extra_lines, pdb_basename):
